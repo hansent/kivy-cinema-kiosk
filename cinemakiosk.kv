@@ -1,18 +1,43 @@
 <InfoScreen>:
-    title:   "Movie Title"
-    trailer: "trailers/arthur-tlr1_h720p.mov"
-    progress: video_widget.position / video_widget.duration
+    progress: video_widget.position / max(0,.0001, video_widget.duration)
+
+    Image:
+        source: 'images/background.png'
 
     Video:
         id: video_widget
         source: root.trailer
-        pos: (0,200)
         play: True
-        
+        pos: (0, 250)
+
 
     Label:
         text: root.title
+        size_hint: (1, None)
+        pos: (0,480)
         font_name: 'Loma Book'
-        font_size: 64
+        font_size: 60
         bold: True
+
+    Label:
+        text: "Theater: 8   7:00pm - 9:00pm"
+        size_hint: (1, None)
+        pos: (0,325)
+        font_name: 'Loma Book'
+        font_size: 30
+
+    Label:
+        text: "Theater: 5   8:30pm - 10:30pm"
+        size_hint: (1, None)
+        pos: (0,200)
+        font_name: 'Loma Book'
+        font_size: 30
+
+    Label:
+        text: "Theater: 3   9:30pm - 12:30pm"
+        size_hint: (1, None)
+        pos: (0,75)
+        font_name: 'Loma Book'
+        font_size: 30
+
 

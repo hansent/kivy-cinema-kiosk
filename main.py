@@ -15,21 +15,31 @@ from movie import Movie
 movies = shelve.open('movie.shelve')
 
 
+class AppScreen(FloatLayout):
+    def __init__(self, **kwargs):
+        super(AppScreen, self).__init__(**kwargs)
+        self.setup()
+    def setup(self):
+        pass
 
 
-class InfoScreen(FloatLayout):
-    title = StringProperty("Arthur")
-    trailer = StringProperty("trailers/arthur-tlr1_h720p.mov")
+class InfoScreen(AppScreen):
+    title = StringProperty('Movie Title')
+    trailer = StringProperty('')
+
+    def setup(self):
+        self.switch_movie()
+
+    def switch_movie(self, movie_name="_random_"):
+        m = movies.get(movie_name, random.choice(movies.values()) )
+        self.title = m.title
+        self.trailer = m.trailer
+        self.progress = 0.0
+
     progress = NumericProperty(0.0)
     def on_progress(self, instance, value):
-        print value
         if value > 0.1:
-            
-            m = random.choice(movies.values())
-            instance.title = m.title
-            instance.trailer = m.trailer
-            instance.progress = 0.0
-
+            instance.switch_movie()
 
 
 class CinemaKiosk(App):
