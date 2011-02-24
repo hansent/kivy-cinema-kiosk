@@ -1,0 +1,38 @@
+BoxLayout:
+
+    orientation: 'vertical'
+    spacing: 5
+    padding: 5
+
+    Video:
+        id: myvideo
+        source: ""
+
+
+    BoxLayout:
+        size_hint_y: None
+        height: 30
+
+        Label:
+            id: mylabel
+            text: str(myvideo.position)
+
+        Slider:
+            value: myvideo.position
+            max: myvideo.duration
+            on_value: print arg[0]
+
+    BoxLayout:
+        size_hint_y: None
+        height: 50
+        spacing: 5
+
+        ToggleButton:
+            group: 'video'
+            text: 'Play'
+            on_press: myvideo.play = True
+
+        ToggleButton:
+            group: 'video'
+            text: 'Stop'
+            on_press: myvideo.play = False
