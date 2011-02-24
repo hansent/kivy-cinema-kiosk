@@ -2,7 +2,7 @@ import feedparser
 import subprocess
 import urllib
 import shelve
-import movie
+from movie import Movie
 
 
 

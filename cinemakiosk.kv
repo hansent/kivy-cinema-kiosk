@@ -1,38 +1,18 @@
-BoxLayout:
-
-    orientation: 'vertical'
-    spacing: 5
-    padding: 5
+<InfoScreen>:
+    title:   "Movie Title"
+    trailer: "trailers/arthur-tlr1_h720p.mov"
+    progress: video_widget.position / video_widget.duration
 
     Video:
-        id: myvideo
-        source: ""
+        id: video_widget
+        source: root.trailer
+        pos: (0,200)
+        play: True
+        
 
+    Label:
+        text: root.title
+        font_name: 'Loma Book'
+        font_size: 64
+        bold: True
 
-    BoxLayout:
-        size_hint_y: None
-        height: 30
-
-        Label:
-            id: mylabel
-            text: str(myvideo.position)
-
-        Slider:
-            value: myvideo.position
-            max: myvideo.duration
-            on_value: print arg[0]
-
-    BoxLayout:
-        size_hint_y: None
-        height: 50
-        spacing: 5
-
-        ToggleButton:
-            group: 'video'
-            text: 'Play'
-            on_press: myvideo.play = True
-
-        ToggleButton:
-            group: 'video'
-            text: 'Stop'
-            on_press: myvideo.play = False
