@@ -3,7 +3,7 @@ from kivy.clock import Clock
 from kivy.uix.floatlayout import FloatLayout
 from kivy.graphics import Canvas, RenderContext, Fbo, Color, Rectangle
 from kivy.properties import BooleanProperty, ObjectProperty, StringProperty, \
-        NumericProperty
+        NumericProperty, OptionProperty
 
 fragment_header = '''
 #ifdef GL_ES
@@ -19,7 +19,8 @@ uniform sampler2D texture0;
 
 /* uniform from page layout */
 uniform float time;
-uniform float transition;
+uniform int t_direction;
+uniform float t_alpha;
 uniform vec2 size;
 uniform vec2 uvsize;
 '''
@@ -52,27 +53,50 @@ uniform vec4       color;
 
 /* uniform from page layout */
 uniform float time;
-uniform float transition;
+uniform int t_direction;
+uniform float t_alpha;
 uniform vec2 size;
 uniform vec2 uvsize;
 '''
 
+fragment_fade_previous = fragment_header + '''
+void main(void) {
+    vec4 c = frag_color * texture2D(texture0, tex_coord0);
+    c.a = 1. - t_alpha;
+    gl_FragColor = c;
+}
+'''
+
+fragment_fade_current = fragment_header + '''
+void main(void) {
+    vec4 c = frag_color * texture2D(texture0, tex_coord0);
+    c.a = t_alpha;
+    gl_FragColor = c;
+}
+'''
+
 vertex_slide_previous = vertex_header + '''
-void main (void) {
+void main(void) {
   frag_color = color;
   tex_coord0 = vTexCoords0;
   vec2 pos = vPosition.xy;
-  pos.x -= size.x * transition;
+  if (t_direction == 1)
+    pos.x -= size.x * t_alpha;
+  else
+    pos.x += size.x * t_alpha;
   gl_Position = projection_mat * modelview_mat * vec4(pos, 0.0, 1.0);
 }
 '''
 
 vertex_slide_current = vertex_header + '''
-void main (void) {
+void main(void) {
   frag_color = color;
   tex_coord0 = vTexCoords0;
   vec2 pos = vPosition.xy;
-  pos.x = (pos.x + size.x) - (size.x * transition);
+  if (t_direction == 1)
+    pos.x = (pos.x + size.x) - (size.x * t_alpha);
+  else
+    pos.x = (pos.x - size.x) + size.x * t_alpha;
   gl_Position = projection_mat * modelview_mat * vec4(pos, 0.0, 1.0);
 }
 '''
@@ -81,7 +105,11 @@ class PageLayout(FloatLayout):
 
     transition = StringProperty('slide')
 
-    transition_alpha = NumericProperty(1.)
+    transition_alpha = NumericProperty(0.)
+
+    transition_direction = OptionProperty(1., options=(-1., 0., 1.))
+
+    transition_manual = BooleanProperty(False)
 
     animation_transition = StringProperty('out_quad')
 
@@ -120,6 +148,7 @@ class PageLayout(FloatLayout):
         super(PageLayout, self).__init__(**kwargs)
 
         Clock.schedule_interval(self._update_shaders, 1 / 60.)
+        self.on_transition(self, self.transition)
 
     def on_size(self, instance, value):
         self.fbo_previous.size = self.fbo_current.size = value
@@ -129,6 +158,23 @@ class PageLayout(FloatLayout):
         self._r_previous.texture = self.fbo_previous.texture
         self._r_current.texture = self.fbo_current.texture
 
+    def on_transition(self, instance, value):
+        sp = self.canvas_previous.shader
+        sc = self.canvas_current.shader
+        if value == 'slide':
+            sp.fs = sc.fs = None
+            sp.vs = vertex_slide_previous
+            sc.vs = vertex_slide_current
+        elif value == 'fade':
+            sp.vs = sc.vs = None
+            sp.fs = fragment_fade_previous
+            sc.fs = fragment_fade_current
+        elif value == 'fade_and_slide':
+            sp.vs = vertex_slide_previous
+            sc.vs = vertex_slide_current
+            sp.fs = fragment_fade_previous
+            sc.fs = fragment_fade_current
+
     #
     # Controlers
     #
@@ -137,17 +183,46 @@ class PageLayout(FloatLayout):
         children = self.children
         if not children:
             return
-        page_current = (children.index(self.page_current) + 1) % len(children)
-        self.page_previous = self.page_current
-        self.page_current = children[page_current]
+        page = (children.index(self.page_current) + 1) % len(children)
+        self.select_page(children[page], direction=1.)
 
     def previous_page(self, *l):
         children = self.children
         if not children:
             return
-        page_current = (children.index(self.page_current) - 1) % len(children)
+        page = (children.index(self.page_current) - 1) % len(children)
+        self.select_page(children[page], direction=-1.)
+
+    def select_page(self, page_current, direction=None, manual=False):
+        children = self.children
+        if not children:
+            return
+        if page_current and not page_current in self.children:
+            raise Exception('Selected page <%s> is not in children' %
+                            str(page_current))
+
+        # set correctly which page
         self.page_previous = self.page_current
-        self.page_current = children[page_current]
+        self.page_current = page_current
+
+        # update graphics part
+        self.fbo_current.clear()
+        self.fbo_previous.clear()
+        if self.page_previous:
+            self.fbo_previous.add(self.page_previous.canvas)
+        if self.page_current:
+            self.fbo_current.add(self.page_current.canvas)
+
+        # XXX FIXME
+        if direction is None:
+            direction = 1.
+
+        self.transition_manual = manual
+        if not manual:
+            self.transition_alpha = 1.
+            self.transition_direction = direction
+            self._transition_stop()
+            Clock.schedule_once(self._transition_start)
 
     #
     # prevent to add widget into graphics tree
@@ -169,7 +244,8 @@ class PageLayout(FloatLayout):
         # manual control
         self._transition_stop()
         touch.grab(self)
-        touch.ud['initial'] = self.transition_alpha
+        touch.ud['pagelayout.alpha'] = self.transition_alpha
+        touch.ud['pagelayout.current'] = self.page_current
         return True
 
     def on_touch_move(self, touch):
@@ -179,8 +255,21 @@ class PageLayout(FloatLayout):
                 return page.dispatch('on_touch_move', touch)
             return
         # manual control
-        alpha = (touch.ox - touch.x) / self.width + touch.ud['initial']
-        print alpha
+        alpha = (touch.ox - touch.x) / self.width
+        direction = 1. if alpha > 0 else -1.
+        alpha = abs(alpha)
+
+        # current page
+        children = self.children
+        page = touch.ud['pagelayout.current']
+        index = (children.index(page) + int(direction)) % len(children)
+        next_page = children[index]
+
+        if next_page != self.page_current:
+            self.select_page(next_page, manual=True)
+        self.transition_direction = direction
+        self.transition_alpha = 1. - alpha
+
         return True
 
     def on_touch_up(self, touch):
@@ -190,42 +279,36 @@ class PageLayout(FloatLayout):
                 return page.dispatch('on_touch_up', touch)
             return
         # manual control
+        touch.ungrab(self)
+        if self.transition_manual:
+            self._transition_start()
         return True
 
     def on_children(self, instance, children):
         # assign a default widget current to display if the current
         # widget disapear or didn't been set yet
-        current = self.page_current
         if not children:
-            self.page_previous = current
-            self.page_current = None
-            return
-        if not current or current not in children:
-            self.page_previous = current
-            self.page_current = children[0]
-
-    def on_page_current(self, instance, value):
-        # a new widget current is set, start transition to the new one.
-        self.fbo_current.clear()
-        self.fbo_previous.clear()
-        if self.page_previous:
-            self.fbo_previous.add(self.page_previous.canvas)
-        if self.page_current:
-            self.fbo_current.add(self.page_current.canvas)
-        self._transition_stop()
-        self._transition_start(1.)
+            self.select_page(None)
+        else:
+            current = self.page_current
+            if not current or current not in children:
+                self.select_page(children[0])
 
     def _transition_stop(self):
+        Clock.unschedule(self._transition_start)
         if self._animation_transition:
-            self._animation_transition.stop()
+            self._animation_transition.stop(self)
             self._animation_transition = None
 
-    def _transition_start(self, to):
-        self.transition_alpha = 0.
-        anim = Animation(transition_alpha=to,
-                         t=self.animation_transition,
-                         d=self.animation_duration)
-        self._animation_transition = anim.start(self)
+    def _transition_start(self, *largs):
+        self._animation_transition = anim = Animation(
+            transition_alpha=0., t=self.animation_transition,
+            d=self.animation_duration)
+        anim.bind(on_complete=self._on_transition_complete)
+        anim.start(self)
+
+    def _on_transition_complete(self, *largs):
+        print 'transition done', self.page_current
 
     def _update_shaders(self, *largs):
         proj = Window.render_context['projection_mat']
@@ -234,7 +317,8 @@ class PageLayout(FloatLayout):
             c['time'] = Clock.get_boottime()
             c['size'] = map(float, self.size)
             c['uvsize'] = self.fbo_current.texture.uvsize
-            c['transition'] = abs(self.transition_alpha)
+            c['t_alpha'] = 1. - abs(self.transition_alpha)
+            c['t_direction'] = int(self.transition_direction)
 
 
 if __name__ == '__main__':
@@ -244,7 +328,10 @@ if __name__ == '__main__':
     for x in xrange(4):
         btn = Button(text='Hello %d' % x, pos_hint={'x': .2, 'y': .2},
                      size_hint=(.6, .6))
-        btn.bind(on_release=layout.next_page)
+        if x % 4 < 3:
+            btn.bind(on_release=layout.next_page)
+        else:
+            btn.bind(on_release=layout.previous_page)
         layout.add_widget(btn)
 
     from kivy.base import runTouchApp
