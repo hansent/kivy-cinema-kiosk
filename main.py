@@ -16,11 +16,13 @@ movies = shelve.open('movie.shelve')
 
 
 class AppScreen(FloatLayout):
+    transition = NumericProperty(0.0)
     def __init__(self, **kwargs):
         super(AppScreen, self).__init__(**kwargs)
         self.setup()
     def setup(self):
         pass
+
 
 
 class InfoScreen(AppScreen):
@@ -42,13 +44,30 @@ class InfoScreen(AppScreen):
             instance.switch_movie()
 
 
+
+class WelcomeScreen(AppScreen):
+    title = StringProperty('Movie Title')
+    summary = StringProperty('Summary...')
+    trailer = StringProperty('')
+
+    def setup(self):
+        self.switch_movie()
+
+    def switch_movie(self, movie_name="_random_"):
+        m = movies.get(movie_name, random.choice(movies.values()) )
+        self.title = m.title
+        self.summary = m.summary[:min(100,len(m.summary))]
+        self.trailer = m.trailer
+
+
+
+
 class CinemaKiosk(App):
 
     def build(self):
-        info_screen = InfoScreen()
-        info_screen.movie_name = 'apollo18'
+        info_screen = WelcomeScreen()
+        #info_screen.movie_name = 'apollo18'
         return info_screen
-
 
 
 CinemaKiosk().run()
