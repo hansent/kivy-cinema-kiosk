@@ -1,3 +1,4 @@
+from kivy.core.window import Window
 from kivy.animation import Animation
 from kivy.clock import Clock
 from kivy.uix.floatlayout import FloatLayout
@@ -270,6 +271,11 @@ class PageLayout(FloatLayout):
         self.transition_direction = direction
         self.transition_alpha = 1. - alpha
 
+        # FIXME this is require right now because even if we change teh
+        # transition_alpha, the canvas is not updated directly (Clock ->
+        # on_touch_* -> drawing.)
+        self._update_shaders()
+
         return True
 
     def on_touch_up(self, touch):
@@ -322,7 +328,6 @@ class PageLayout(FloatLayout):
 
 
 if __name__ == '__main__':
-    from kivy.core.window import Window
     from kivy.uix.button import Button
     layout = PageLayout(size=Window.size)
     for x in xrange(4):
