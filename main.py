@@ -22,6 +22,7 @@ class AppScreen(FloatLayout):
 
 
 class InfoScreen(AppScreen):
+    play = BooleanProperty(True)
     app = ObjectProperty(None)
     movie = ObjectProperty(None)
     progress = NumericProperty(0.0)
