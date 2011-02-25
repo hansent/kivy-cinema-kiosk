@@ -309,7 +309,7 @@ class PageLayout(FloatLayout):
 
     def on_transition_alpha(self, instance, alpha):
         self.dispatch('on_page_transition', self.page_previous,
-                      self.page_current, alpha)
+                      self.page_current, 1. - abs(alpha))
 
     def on_page_transition(self, page_previous, page_current, alpha):
         pass

@@ -24,8 +24,8 @@
     Video:
         id: video_widget
         source: root.movie.trailer
-        play: root.play
-        pos: (0, 250)
+        play: root.activated
+        pos: (0, 250 + (1 - root.transition) * 1920)
 
     Label:
         text: root.movie.title
@@ -74,17 +74,17 @@
         #        pos: self.pos
 
 		MovieThumbnail:
-			play: root.play
+			play: root.activated
 			app: root.app
 			movie: root.movies[0]
 
 		MovieThumbnail:
-			play: root.play
+			play: root.activated
 			app: root.app
 			movie: root.movies[1]
 
 		MovieThumbnail:
-			play: root.play
+			play: root.activated
 			app: root.app
 			movie: root.movies[2]
 
