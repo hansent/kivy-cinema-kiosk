@@ -1,6 +1,17 @@
+#:kivy 1.0
+
 <Label>:
     font_name: 'Loma Book'
 
+# Always clear the background of every child widget
+# FIXME: this should be done in FBO of PageLayout... well.
+<AppScreen>:
+	canvas:
+		Color:
+			rgb: 0, 0, 0
+		Rectangle:
+			pos: self.pos
+			size: self.size
 
 <InfoScreen>:
     progress: video_widget.position / max(0,.0001, video_widget.duration)
@@ -56,29 +67,29 @@
         pos: (50, 180)
         play: True
         canvas.before:
-            Color:  
+            Color:
                 rgb: 0,0,0
             Rectangle:
                 pos: self.pos
                 size: self.size
 
-
+	# Title label, centered in a box upside the video, with a margin of 10 pixels
     Label:
         text: root.title
         size_hint: (None, None)
-        anchor_x: 'left'
-        align: 'left'
-        size: (200, 100 + (0*len(self.text)))
-        pos: (trailer1.x, trailer1.y+70)
+        text_size: (trailer1.width, None)
+		halign: 'center'
+		size: trailer1.width, self.texture_size[1]
+        pos: (trailer1.x, trailer1.y + trailer1.height + 10)
         font_size: 22
 
 
+	# Summary label, centered in a box downside the video, with a margin of 10 pixels
     Label:
         text: root.summary
         size_hint: (None, None)
-        width: 200 + 0*len(self.text)
-        multiline:True
-        anchor_x: 'left'
-        align: 'left'
-        pos: (trailer1.x, trailer1.y-10)
+        text_size: (200, None)
+		halign: 'center'
+        pos: (trailer1.x, trailer1.y - self.texture_size[1] - 10)
+		size: (trailer1.width, self.texture_size[1])
         font_size: 12

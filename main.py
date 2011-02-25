@@ -14,6 +14,8 @@ import shelve, random
 from movie import Movie
 movies = shelve.open('movie.shelve')
 
+from pagelayout import PageLayout
+
 
 class AppScreen(FloatLayout):
     transition = NumericProperty(0.0)
@@ -65,9 +67,16 @@ class WelcomeScreen(AppScreen):
 class CinemaKiosk(App):
 
     def build(self):
-        info_screen = WelcomeScreen()
+        # Use a pagelayout
+        if True:
+            pagelayout = PageLayout()
+            pagelayout.add_widget(WelcomeScreen())
+            pagelayout.add_widget(InfoScreen())
+        else:
+            info_screen = WelcomeScreen()
+        #info_screen = InfoScreen()
         #info_screen.movie_name = 'apollo18'
-        return info_screen
+        return pagelayout
 
 
 CinemaKiosk().run()
