@@ -16,6 +16,8 @@
 <InfoScreen>:
     progress: video_widget.position / max(0,.0001, video_widget.duration)
 
+	on_touch_down: self.app.show_welcome()
+
     Image:
         source: 'images/background.png'
 

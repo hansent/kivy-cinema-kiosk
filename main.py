@@ -18,16 +18,21 @@ from pagelayout import PageLayout
 
 
 class AppScreen(FloatLayout):
-    transition = NumericProperty(0.0)
+    app = ObjectProperty(None)
+    activated = BooleanProperty(False)
+    transition = NumericProperty(1.0)
 
+    def on_page_transition(self, instance, old_page, new_page, alpha):
+        print old_page, new_page, alpha
 
 class InfoScreen(AppScreen):
+    '''Play random movies
+    '''
     play = BooleanProperty(True)
-    app = ObjectProperty(None)
     movie = ObjectProperty(None)
     progress = NumericProperty(0.0)
 
-    def __init__(self, app, **kwargs):
+    def __init__(self, **kwargs):
         super(InfoScreen, self).__init__(**kwargs)
 
     def on_movie(self, instance, m):
@@ -35,22 +40,33 @@ class InfoScreen(AppScreen):
         self.trailer = m.trailer
         self.progress = 0.0
 
-    '''XXX Thomas, dunno why the switch movie was needed
-    if needed, pass again through the app controler
     def on_progress(self, instance, value):
+        print 'on_progress', value
         if value > 0.1:
-            instance.switch_movie()
+            self.movie = self.app.get_random_movie()
+
+    def on_parent(self, instance, parent):
+        if parent is None or not isinstance(parent, PageLayout):
+            return
+        parent.bind(on_page_transition=self.on_page_transition)
+
+
+class MovidSelectionScreen(AppScreen):
+    '''Screen displayed after the selection screen
     '''
+    play = BooleanProperty(True)
+    movie = ObjectProperty(None)
 
 
 class MovieThumbnail(Widget):
+    '''Thumbnail movie used in Welcome screen
+    '''
     play = BooleanProperty(True)
     app = ObjectProperty(None)
     movie = ObjectProperty(None)
 
 class WelcomeScreen(AppScreen):
     play = BooleanProperty(True)
-    app = ObjectProperty(None)
     movies = ListProperty([None, None, None])
 
     def __init__(self, app, **kwargs):
@@ -73,30 +89,43 @@ class CinemaKiosk(App):
     '''CinemaKiosk is the application controler.
     '''
 
+    def get_random_movie(self):
+        return choice(movies.values())
+
     def select_movie(self, moviethumbnail, is_preload=False):
-        print 'movie selected', moviethumbnail
         # stop the welcome screen video, and add an info screen on the current
         # selected video
         if is_preload:
             # in preload, don't play, just preload.
-            self.infoscreen = InfoScreen(
-                self, movie=moviethumbnail.movie, play=False)
+            self.movie_selection_screen = MovidSelectionScreen(
+                app=self, movie=moviethumbnail.movie, play=False)
         else:
             # if the current selection is different, or new
-            if not self.infoscreen or \
-               self.infoscreen.movie != moviethumbnail.movie:
-                self.infoscreen = InfoScreen(self, movie=moviethumbnail.movie)
+            if not self.movie_selection_screen or \
+               self.movie_selection_screen.movie != moviethumbnail.movie:
+                self.movie_selection_screen = MovidSelectionScreen(app=self, movie=moviethumbnail.movie)
             else:
-                self.infoscreen.play = True
+                self.movie_selection_screen.play = True
             self.welcome.play = False
-            self.root.add_widget(self.infoscreen)
-            self.root.select_page(self.infoscreen)
+            self.root.add_widget(self.movie_selection_screen)
+            self.root.select_page(self.movie_selection_screen)
+
+    def show_welcome(self):
+        self.root.select_page(self.welcome_screen)
+        self.welcome_screen.play = True
+        self.info_screen.play = False
 
     def build(self):
-        # first, create our initial page layout
         root = PageLayout(allow_touch_interaction=False)
-        self.welcome = WelcomeScreen(self)
-        root.add_widget(self.welcome)
+
+        # first screen that play random movie
+        self.info_screen = InfoScreen(app=self, movie=self.get_random_movie())
+        root.add_widget(self.info_screen)
+
+        # welcome screen
+        self.welcome_screen = WelcomeScreen(app=self, play=False)
+        root.add_widget(self.welcome_screen)
+
         return root
 
 

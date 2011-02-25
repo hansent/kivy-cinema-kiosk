@@ -150,6 +150,8 @@ class PageLayout(FloatLayout):
 
         super(PageLayout, self).__init__(**kwargs)
 
+        self.register_event_type('on_page_transition')
+
         Clock.schedule_interval(self._update_shaders, 1 / 60.)
         self.on_transition(self, self.transition)
 
@@ -234,6 +236,7 @@ class PageLayout(FloatLayout):
 
     def add_widget(self, widget):
         self.children.append(widget)
+        widget.parent = self
 
     def remove_widget(self, widget):
         self.children.remove(widget)
@@ -303,6 +306,13 @@ class PageLayout(FloatLayout):
             current = self.page_current
             if not current or current not in children:
                 self.select_page(children[0])
+
+    def on_transition_alpha(self, instance, alpha):
+        self.dispatch('on_page_transition', self.page_previous,
+                      self.page_current, alpha)
+
+    def on_page_transition(self, page_previous, page_current, alpha):
+        pass
 
     def _transition_stop(self):
         Clock.unschedule(self._transition_start)
