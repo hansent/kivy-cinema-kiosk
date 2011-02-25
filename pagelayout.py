@@ -122,6 +122,8 @@ class PageLayout(FloatLayout):
 
     page_current = ObjectProperty(None)
 
+    allow_touch_interaction = BooleanProperty(True)
+
     def __init__(self, **kwargs):
         self._animation_transition = None
         self.canvas = Canvas()
@@ -242,6 +244,8 @@ class PageLayout(FloatLayout):
             return
         if page.dispatch('on_touch_down', touch):
             return True
+        if not self.allow_touch_interaction:
+            return
         # manual control
         self._transition_stop()
         touch.grab(self)

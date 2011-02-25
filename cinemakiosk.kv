@@ -21,12 +21,12 @@
 
     Video:
         id: video_widget
-        source: root.trailer
+        source: root.movie.trailer
         play: True
         pos: (0, 250)
 
     Label:
-        text: root.title
+        text: root.movie.title
         size_hint: (1, None)
         pos: (0,480)
         font_size: 60
@@ -53,19 +53,48 @@
         font_size: 30
 
 
-
 <WelcomeScreen>
     Image:
         source: 'images/welcome.png'
 
+	BoxLayout:
+		pos: 86, 158
+		size: 916, 500
+		size_hint: (None, None)
+		spacing: 50
+		padding: 50
+
+		MovieThumbnail:
+			play: root.play
+			app: root.app
+			movie: root.movies[0]
+
+		MovieThumbnail:
+			play: root.play
+			app: root.app
+			movie: root.movies[1]
+
+		MovieThumbnail:
+			play: root.play
+			app: root.app
+			movie: root.movies[2]
+
+
+#
+# Little thumbnail that will appear inside the welcome screen
+#
+<MovieThumbnail>:
+
+	on_touch_down: self.app.select_movie(self) if root.collide_point(*largs[2].pos) else None
+
     Video:
         id: trailer1
-        source: root.trailer
-        size: (384/2, 216/2)
-        size_hint: (None, None)
-        pos_hint: {}
-        pos: (50, 180)
-        play: True
+        source: root.movie.trailer if root.movie else ''
+		center: root.center
+		height: 200
+		width: root.width
+        play: root.play
+
         canvas.before:
             Color:
                 rgb: 0,0,0
@@ -75,21 +104,22 @@
 
 	# Title label, centered in a box upside the video, with a margin of 10 pixels
     Label:
-        text: root.title
+        text: root.movie.title if root.movie else ''
         size_hint: (None, None)
         text_size: (trailer1.width, None)
 		halign: 'center'
 		size: trailer1.width, self.texture_size[1]
-        pos: (trailer1.x, trailer1.y + trailer1.height + 10)
+        pos: (trailer1.x, trailer1.center_y + 110)
         font_size: 22
 
 
 	# Summary label, centered in a box downside the video, with a margin of 10 pixels
     Label:
-        text: root.summary
+        text: root.movie.summary[:100] if root.movie else ''
         size_hint: (None, None)
         text_size: (200, None)
 		halign: 'center'
-        pos: (trailer1.x, trailer1.y - self.texture_size[1] - 10)
+        pos: (trailer1.x, trailer1.center_y - self.texture_size[1] - 110)
 		size: (trailer1.width, self.texture_size[1])
         font_size: 12
+
