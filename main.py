@@ -31,6 +31,7 @@ class AppScreen(FloatLayout):
         self.activated = (self == new_page)
         self.transition = alpha if self.activated else 1. - alpha
 
+
 class InfoScreen(AppScreen):
     '''Play random movies
     '''
@@ -50,10 +51,12 @@ class InfoScreen(AppScreen):
             self.movie = self.app.get_random_movie()
 
 
-class MovidSelectionScreen(AppScreen):
+class MovieScreen(AppScreen):
     '''Screen displayed after the selection screen
     '''
     movie = ObjectProperty(None)
+    movies = ListProperty([None, None, None])
+
 
 
 class MovieThumbnail(Widget):
@@ -63,24 +66,15 @@ class MovieThumbnail(Widget):
     app = ObjectProperty(None)
     movie = ObjectProperty(None)
 
+
 class WelcomeScreen(AppScreen):
     movies = ListProperty([None, None, None])
 
-    def __init__(self, app, **kwargs):
+    def __init__(self, **kwargs):
         super(WelcomeScreen, self).__init__(**kwargs)
-        self.app = app
-        self.get_random_movies()
+        self.movies = self.app.get_random_movies()
 
-    def get_random_movies(self):
-        available = movies.values()[:]
-        result = []
-        for x in xrange(3):
-            if not len(available):
-                break
-            index = randint(0, len(available) - 1)
-            m = available.pop(index)
-            result.append(m)
-        self.movies = result
+
 
 class CinemaKiosk(App):
     '''CinemaKiosk is the application controler.
@@ -89,20 +83,27 @@ class CinemaKiosk(App):
     def get_random_movie(self):
         return choice(movies.values())
 
+
+    def get_random_movies(self, n=3):
+        available = movies.values()[:]
+        result = []
+        for x in xrange(n):
+            if not len(available):
+                break
+            index = randint(0, len(available) - 1)
+            m = available.pop(index)
+            result.append(m)
+        return result
+
     def select_movie(self, moviethumbnail, is_preload=False):
         # stop the welcome screen video, and add an info screen on the current
         # selected video
         if is_preload:
             # in preload, don't play, just preload.
-            self.movie_selection_screen = MovidSelectionScreen(
-                app=self, movie=moviethumbnail.movie)
+            self.movie_screen.movie = moviethumbnail.movie
         else:
-            # if the current selection is different, or new
-            if not self.movie_selection_screen or \
-               self.movie_selection_screen.movie != moviethumbnail.movie:
-                self.movie_selection_screen = MovidSelectionScreen(app=self, movie=moviethumbnail.movie)
-            self.root.add_widget(self.movie_selection_screen)
-            self.root.select_page(self.movie_selection_screen)
+            self.movie_screen.movies = self.get_random_movies()
+            self.root.select_page(self.movie_screen)
 
     def show_welcome(self):
         self.root.select_page(self.welcome_screen)
@@ -117,6 +118,10 @@ class CinemaKiosk(App):
         # welcome screen
         self.welcome_screen = WelcomeScreen(app=self)
         root.add_widget(self.welcome_screen)
+
+        #movie screen
+        self.movie_screen = MovieScreen(app=self, movie=self.get_random_movie())
+        root.add_widget(self.movie_screen)
 
         return root
 

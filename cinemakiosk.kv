@@ -8,7 +8,7 @@
 <AppScreen>:
 	canvas:
 		Color:
-			rgb: 0, 0, 0
+			rgba: 0, 0, 1, 0.3
 		Rectangle:
 			pos: self.pos
 			size: self.size
@@ -87,6 +87,68 @@
 			play: root.activated
 			app: root.app
 			movie: root.movies[2]
+
+
+
+
+<MovieScreen>:
+    Image:
+        source: 'images/background.png'
+
+    BoxLayout:
+        orientation: 'vertical'
+
+
+        Label: 
+            text: root.movie.title
+            size_hint: (1,.5)
+            font_size: 60
+            bold: True
+
+        Video:
+            size_hint: (1,1)
+            canvas.before:
+                Color:
+                    rgb:0,0,0
+                Rectangle:
+                    size:self.size
+                    pos: self.pos
+            source: root.movie.trailer
+            play: True
+
+        Label:
+            text: root.movie.summary
+            size_hint: (1,.5)
+            padding: (20,50)
+            text_size: (root.width-40, self.height)
+            font_size: 12
+
+        BoxLayout:
+            spacing: 25
+            padding: 20
+            
+            canvas:
+                Color:
+                    rgba:0,0,0,0.3
+                Rectangle:
+                    size:self.size
+                    pos: self.pos
+
+            MovieThumbnail:
+                play: root.activated
+                app: root.app
+                movie: root.movies[0]
+
+            MovieThumbnail:
+                play: root.activated
+                app: root.app
+                movie: root.movies[1]
+
+            MovieThumbnail:
+                play: root.activated
+                app: root.app
+                movie: root.movies[2]
+
 
 
 #
