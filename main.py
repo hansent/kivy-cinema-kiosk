@@ -102,6 +102,7 @@ class CinemaKiosk(App):
             # in preload, don't play, just preload.
             self.movie_screen.movie = moviethumbnail.movie
         else:
+            self.movie_screen.movie = moviethumbnail.movie
             self.movie_screen.movies = self.get_random_movies()
             self.root.select_page(self.movie_screen)
 
