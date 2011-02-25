@@ -72,14 +72,24 @@ class CinemaKiosk(App):
     '''CinemaKiosk is the application controler.
     '''
 
-    def select_movie(self, moviethumbnail):
+    def select_movie(self, moviethumbnail, is_preload=False):
         print 'movie selected', moviethumbnail
         # stop the welcome screen video, and add an info screen on the current
         # selected video
-        self.welcome.play = False
-        infoscreen = InfoScreen(self, movie=moviethumbnail.movie)
-        self.root.add_widget(infoscreen)
-        self.root.select_page(infoscreen)
+        if is_preload:
+            # in preload, don't play, just preload.
+            self.infoscreen = InfoScreen(
+                self, movie=moviethumbnail.movie, play=False)
+        else:
+            # if the current selection is different, or new
+            if not self.infoscreen or \
+               self.infoscreen.movie != moviethumbnail.movie:
+                self.infoscreen = InfoScreen(self, movie=moviethumbnail.movie)
+            else:
+                self.infoscreen.play = True
+            self.welcome.play = False
+            self.root.add_widget(self.infoscreen)
+            self.root.select_page(self.infoscreen)
 
     def build(self):
         # first, create our initial page layout

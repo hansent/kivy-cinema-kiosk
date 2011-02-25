@@ -85,7 +85,8 @@
 #
 <MovieThumbnail>:
 
-	on_touch_down: self.app.select_movie(self) if root.collide_point(*largs[2].pos) else None
+	on_touch_down: self.app.select_movie(self, is_preload=True) if root.collide_point(*largs[2].pos) else None
+	on_touch_up: self.app.select_movie(self) if root.collide_point(*largs[2].pos) else None
 
     Video:
         id: trailer1
