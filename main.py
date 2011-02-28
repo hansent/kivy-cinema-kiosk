@@ -8,6 +8,9 @@ from kivy.uix.widget import Widget
 from kivy.uix.floatlayout import FloatLayout
 from kivy.factory import Factory
 
+#zeroMQ for communicating with other processes 
+import zmqapp
+
 # load cached movie feed data
 import shelve
 from random import choice, randint
@@ -32,14 +35,14 @@ class AppScreen(FloatLayout):
         self.transition = alpha if self.activated else 1. - alpha
 
 
-class InfoScreen(AppScreen):
+class IntroScreen(AppScreen):
     '''Play random movies
     '''
     movie = ObjectProperty(None)
     progress = NumericProperty(0.0)
 
     def __init__(self, **kwargs):
-        super(InfoScreen, self).__init__(**kwargs)
+        super(IntroScreen, self).__init__(**kwargs)
 
     def on_movie(self, instance, m):
         self.title = m.title
@@ -76,13 +79,23 @@ class WelcomeScreen(AppScreen):
 
 
 
-class CinemaKiosk(App):
+class CinemaKiosk(zmqapp.ZmqControlledApp):
     '''CinemaKiosk is the application controler.
     '''
 
     def get_random_movie(self):
         return choice(movies.values())
 
+
+    def process_zmq_message(self, msg):
+        person_count = msg.get('person_count', 0)
+        if person_count == 0:
+            self.show_intro()
+            return
+
+        if self.root.page_current == self.intro_screen:
+            self.show_welcome()
+        
 
     def get_random_movies(self, n=3):
         available = movies.values()[:]
@@ -95,26 +108,24 @@ class CinemaKiosk(App):
             result.append(m)
         return result
 
-    def select_movie(self, moviethumbnail, is_preload=False):
-        # stop the welcome screen video, and add an info screen on the current
-        # selected video
-        if is_preload:
-            # in preload, don't play, just preload.
-            self.movie_screen.movie = moviethumbnail.movie
-        else:
-            self.movie_screen.movie = moviethumbnail.movie
-            self.movie_screen.movies = self.get_random_movies()
-            self.root.select_page(self.movie_screen)
+    def select_movie(self, moviethumbnail):
+        print "selecting", moviethumbnail.movie.title
+        self.movie_screen.movies = self.get_random_movies()
+        self.movie_screen.movie = moviethumbnail.movie
+        self.root.select_page(self.movie_screen)
 
     def show_welcome(self):
         self.root.select_page(self.welcome_screen)
+
+    def show_intro(self):
+        self.root.select_page(self.intro_screen)
 
     def build(self):
         root = PageLayout(allow_touch_interaction=False)
 
         # first screen that play random movie
-        self.info_screen = InfoScreen(app=self, movie=self.get_random_movie())
-        root.add_widget(self.info_screen)
+        self.intro_screen = IntroScreen(app=self, movie=self.get_random_movie())
+        root.add_widget(self.intro_screen)
 
         # welcome screen
         self.welcome_screen = WelcomeScreen(app=self)

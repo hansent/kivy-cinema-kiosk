@@ -1,0 +1,19 @@
+
+Installing dependencies:
+
+	To install the lates version of kivy, following instruction here:
+	http://kivy.org/docs/guide/installation.html#development-version	
+
+	To install zeroMQ and pytho bindings run:
+	./install-dependencies.sh
+
+
+To download movie trailer data from apple.com (needs to be done before running app teh first time):
+	python pull-trailers.py
+
+
+To run the program:
+	./start.sh
+
+
+

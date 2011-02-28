@@ -13,7 +13,7 @@
 			pos: self.pos
 			size: self.size
 
-<InfoScreen>:
+<IntroScreen>:
     progress: video_widget.position / max(0,.0001, video_widget.duration)
 
 	on_touch_down: self.app.show_welcome()
@@ -101,7 +101,7 @@
 
         Label: 
             text: root.movie.title
-            size_hint: (1,.5)
+            size_hint: (1,.3)
             font_size: 60
             bold: True
 
@@ -116,16 +116,27 @@
             source: root.movie.trailer
             play: True
 
+        BoxLayout:
+            size_hint: (1, 0.15)
+            
+            Image:
+                source:'images/qrcode.png'
+
+            Button:
+                text: "Buy Tickets"
+                font_size: 30
+
         Label:
             text: root.movie.summary
             size_hint: (1,.5)
-            padding: (20,50)
+            padding: (20,20)
             text_size: (root.width-40, self.height)
             font_size: 12
 
         BoxLayout:
             spacing: 25
             padding: 20
+            size_hint:(1,0.8)
             
             canvas:
                 Color:
@@ -151,13 +162,18 @@
 
 
 
+
+
+
+
+
 #
 # Little thumbnail that will appear inside the welcome screen
 #
 <MovieThumbnail>:
 
 	on_touch_down: self.app.select_movie(self) if root.collide_point(*largs[2].pos) else None
-
+    
 
     BoxLayout:
         orientation: 'vertical'
