@@ -36,7 +36,7 @@ class ZmqControlledApp(App):
 
     def pull_zmq_message(self, *args):
         try:
-            msg = self._zmq_pull_socket.recv_pyobj(zmq.NOBLOCK)
+            msg = self._zmq_pull_socket.recv_json(zmq.NOBLOCK)
             self.process_zmq_message(msg)
         except zmq.core.error.ZMQError:
             pass
@@ -55,7 +55,7 @@ class ZmqAppController(object):
         self._zmq_push_socket.bind(endpoint)
 
     def send(self, msg):
-        self._zmq_push_socket.send_pyobj(msg)
+        self._zmq_push_socket.send_json(msg)
 
 
 if __name__ == "__main__":

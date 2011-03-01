@@ -76,7 +76,7 @@ class MovieScreen(AppScreen):
     '''Screen displayed after the selection screen
     '''
     movie = ObjectProperty(None)
-    movies = ListProperty([None, None, None])
+    movies = ObjectProperty([None, None, None])
 
 
 
@@ -90,7 +90,7 @@ class MovieThumbnail(Widget):
 
 class WelcomeScreen(AppScreen):
     movies = ListProperty([None, None, None])
-
+    bg_color = ListProperty([.5,.5,.5])
     def __init__(self, **kwargs):
         super(WelcomeScreen, self).__init__(**kwargs)
         self.movies = self.app.get_random_movies()
@@ -111,8 +111,15 @@ class CinemaKiosk(zmqapp.ZmqControlledApp):
             self.show_intro()
             return
 
-        if self.root.page_current == self.intro_screen:
-            self.show_welcome()
+        gender = msg.get('gender', 'neutral')
+        if gender == 'male':
+            self.welcome_screen.bg_color = (0.5,0.5,1.0)
+        if gender == 'female':
+            self.welcome_screen.bg_color = (1.0,0.5,0.5)
+        if gender == 'neutral':
+            self.welcome_screen.bg_color = (0.5,0.5,0.5)
+
+        self.show_welcome()
         
 
     def get_random_movies(self, n=3):

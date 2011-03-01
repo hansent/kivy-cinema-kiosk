@@ -27,7 +27,7 @@
 <AppScreen>:
 	canvas:
 		Color:
-			rgba: 0, 0, 1, 0.3
+			rgb: 0, 0, 0
 		Rectangle:
 			pos: self.pos
 			size: self.size
@@ -75,6 +75,13 @@
 
 
 <WelcomeScreen>
+    canvas:
+		Color:
+			rgb: self.bg_color
+		Rectangle:
+			pos: self.pos
+			size: self.size
+
     Image:
         source: 'images/welcome.png'
 
@@ -211,6 +218,7 @@
         Video:
             id: trailer1
             source: root.movie.trailer if root.movie else ''
+            volume: 0.1
             play: root.play
             size_hint: (1,.5)
 
