@@ -1,1 +1,1 @@
-LD_LIBRARY_PATH=/usr/local/lib python main.py
+LD_LIBRARY_PATH=/usr/local/lib python main.py $@
