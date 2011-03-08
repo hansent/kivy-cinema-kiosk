@@ -18,7 +18,7 @@
 
 
 class Movie(object):
-    def __init__(self, title, summary, trailer):
+    def __init__(self, title='', summary='', trailer=''):
         self.title = title
         self.summary = summary
         self.trailer = trailer
