@@ -53,7 +53,7 @@ def get_movie_data():
         #hack url for actual trailer video file
         url = e.link.replace('apple.com/trailers', 'apple.com/movies')
         key = str(url.split('/')[-2])
-        filename = key+'-tlr1_h720p.mov'
+        filename = key+'-tlr1_h480p.mov'
         if download_trailer(url+filename):
             title = e.title.rsplit('-',1)[0].strip() # only want movie title
             movie = Movie(title, e.summary, 'trailers/'+filename)

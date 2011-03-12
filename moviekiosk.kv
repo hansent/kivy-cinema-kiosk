@@ -18,75 +18,152 @@
 #    You should have received a copy of the GNU General Public License
 #    along with The Kivy Cinema Kiosk Demo.  If not, see <http://www.gnu.org/licenses/>.
 
-<Label>:
-    font_name: 'Arial'
 
 
 <AppScreen>:
-	canvas:
-		Color:
-			rgb: 0,0,0
-		Rectangle:
-			pos: self.pos
-			size: self.size
-
-
-   
-<FeaturedMovie>:
     orientation: 'vertical'
-    Video: 
-        kvid: "video"      
-        size_hint: (1, None)
-        size: root.width, root.width* 3.0/4.0
-        canvas.before:
-            Color:
-		        rgba: 0,0,0,0.7
-	        Rectangle:
-		        pos: self.pos
-		        size: self.size
-    
+    size: (1080,1920)
+    size_hint: (None, None)
+
+
+<Button>:
+    font_size: 40
+
+
+<BuyingOverlay>
+    y: 550
+    size: 1080, 1000
+    Widget:
+        size_hint:(.1,1)
     BoxLayout:
         orientation: 'vertical'
-        padding: 20
+        size_hint:(.8,1)
+        Button:
+            text: "Purchase Tickets"
+            size_hint:(1, .3)
+        BoxLayout:
+            Button:
+                text: "Adults more"
+                on_release: root.num_adults +=1
+            Button:
+                text: "Kids more"
+                on_release: root.num_kids +=1
+        BoxLayout:
+            Button:
+                text: "Adults less"
+                on_release: root.num_adults -=1
+            Button:
+                text: "Kids less"
+                on_release: root.num_kids -=1
+        Button:
+            size_hint:(1, .5)
+            text: "Pay"
+            on_release: root.finish_pay
+        
+    Widget:
+        size_hint:(.1,1)
 
-        Label:
-            text: root.movie_title
-            font_size:  24
-            halign: 'left'
-            bold: True
-            height: 100
-            size_hint: (1, None)
-            text_size: (500,None)
+<MovieVideo>
+    canvas.before:
+        Color:
+            rgba: .1,.1,.1,1.0
+        Rectangle:
+            pos: self.pos
+            size: self.size
 
-        Label:
-            text: root.movie_summary
-            font_size:  12
-            halign: 'left'
-            size_hint: (1, None)
-            text_size: (500, 400)
-            height: self.texture_size[1]
+<MovieTitle>
+    font_size: 48
+    height: 100
+    width: 1080
+    padding_x: 10
+    padding_y: 10
+    text_size: (1000,100)
+    align: 'left'
+    bold: True
 
-        Widget:
-            size_hint:(1,1)
+<MovieSummary>
+    font_size: 22
+    padding_x:10
+    width: 1080
+    height: self.texture_size[1]
+    y: 820 -  self.height
+    v_align: 'top'
+
+<MovieScreen>
+    size: (1080,1920)
+    size_hint: (None, None)
 
 
+<BuyButton>
+    canvas:
+        Clear
+        Rectangle:
+            size:self.size
+            pos: self.pos
+            source: 'images/buytickets.png'
 
 
+<MovieThumbnail>:
+    canvas:
+        Rectangle:
+            source: 'images/columnbg.png'
+            pos: self.pos
+            size: self.size 
 
 
-<MovieScreen>:
-    on_touch_down: self.next_movie()
+<ThumbnailTitle>:
+    font_size: 24
+    bold: True
+    size_hint: (1,None)
+    text_size: (300, None)
+    height: 100
     
-    Image:
-        source: 'images/bg.png' 
+    canvas.before:
+        Color:
+            rgba: (0,0,0,0.5)
+        Rectangle:
+            pos:self.pos
+            size:self.size
+    
+<ThumbnailVideo>:
+    size_hint: (1, 4/3.0)
+    canvas.before:
+        Color:
+            rgba: 0,0,0,1
+        Rectangle:
+            pos: self.pos
+            size: self.size
+
+<ThumbnailDetails>:
+    font_size: 16
+
+
+
+<Fade>:
+    canvas.after:
+        Color:
+            rgba:(0,0,0,self.alpha)
+        Rectangle:
+            pos:0,0
+            size:1080,1920
+
+
+<InfoScreen>
+    orientation: 'vertical'
+    size: (1080,1920)
+    size_hint: (None, None)
 
     Image:
-        id: header_bg
-        source: 'images/headerbg.png'   
-        size: self.norm_image_size
-        y: root.height - self.height
-    
-    FeaturedMovie:
-        kvid: 'feature'
-        movie: root.app.get_random_movie()
+        source: 'images/1topbg.png'
+        size_hint: (1.0, 0.6)
+    Image:
+        source: 'images/1bottombg.png'
+        size_hint: (1.0, 0.4)
+
+
+
+<ThankYouScreen>
+    Image
+        source: "images/thankyou.png"
+        size_hint: (1.0, 1.0)
 
