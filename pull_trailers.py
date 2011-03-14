@@ -37,7 +37,7 @@ def download_trailer(url):
 
     #ok, have wget download it in teh background (unless already there)
     wget_args = ['wget', '-q', '-N', '-U', 'QuickTime', url]
-    subprocess.Popen(wget_args, cwd='trailers')
+    subprocess.Popen(wget_args, cwd='content/trailers')
     return True
 
 
@@ -56,7 +56,7 @@ def get_movie_data():
         filename = key+'-tlr1_h480p.mov'
         if download_trailer(url+filename):
             title = e.title.rsplit('-',1)[0].strip() # only want movie title
-            movie = Movie(title, e.summary, 'trailers/'+filename)
+            movie = Movie(title, e.summary, 'content/trailers/'+filename)
             movie_shelve[key] = movie
 
     movie_shelve.close()

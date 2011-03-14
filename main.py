@@ -20,7 +20,7 @@
 import random
 import shelve
 import zmqapp # zeroMQ for inter processes communication
-
+from glob import glob
 
 # kivy imports ######################################################
 import kivy
@@ -30,8 +30,10 @@ from kivy.app import App
 from kivy.core.window import Window
 from kivy.clock import Clock
 from kivy.factory import Factory
-from kivy.utils import kvquery
 
+
+from kivy.core.image import ImageLoader
+from kivy.core.video import Video as VideoBuffer
 from kivy.graphics import *
 from kivy.properties import *
 
@@ -56,6 +58,7 @@ movies = shelve.open('movie.shelve')
 
 
 class KivyWidgetMetaClass(type):  
+    '''
     def __new__(cls, name, bases, attrs):  
         #replacement for original __init__ function
         original_init = attrs.get('__init__', bases[0].__init__)
@@ -65,7 +68,7 @@ class KivyWidgetMetaClass(type):
                 Clock.schedule_once(self.setup) #call setup next loop iteration
         attrs['__init__'] = alternate_init 
         return super(KivyWidgetMetaClass, cls).__new__(cls, name, bases, attrs)
-
+    '''
     def __init__(self, name, bases, attrs):  
         super(KivyWidgetMetaClass, self).__init__(name, bases, attrs)
         Factory.register(name, self)
@@ -93,48 +96,6 @@ class Viewport(ScatterPlane):
             for s in sc.children:
                 print s.__class__, s.size
 
-
-'''
-class MovieView(BoxLayout):
-    __metaclass__ = KivyWidgetMetaClass
-
-    video = ObjectProperty(None)
-    muted = BooleanProperty(True)
-    movie = ObjectProperty(None)
-    movie_title   = StringProperty('N/A')
-    movie_summary = StringProperty('N/A')
-    movie_trailer = StringProperty('')
-        
-    def setup(self, *args):
-        self.video = kvquery(self, kvid='video').next()
-
-    def play(self, *args):
-        if self.video:
-            self.video.source = ''
-            self.video.source = self.movie.trailer
-            self.video.play = True
-            print self.muted, "ASASASAS"
-            if self.muted:
-                print "MUTING"
-                self.video.volume = 0
-
-    def stop(self, *args):
-        if self.video:
-            self.video.play = False
-
-    def on_movie(self, instace, movie):
-        self.movie_title   = movie.title
-        self.movie_summary = movie.summary
-
-        if self.video:
-            self.video.source = ''
-            self.video.source = movie.trailer
-            self.video.play = False
-
-
-class FeaturedMovie(MovieView):
-    pass
-'''
 
 
 
@@ -165,12 +126,10 @@ class InfoScreen(AppScreen):
         self.video.volume = 1.0
         self.fixed_layer.add_widget(self.video)
         self.movie = self.app.get_random_movie()
-
-        def print_self(*args):
-            print self.pos, self.size, self.video.pos
-        Clock.schedule_interval(print_self, 1.0)
-
+        self.title_label = Label(text=self.movie.title, font_size=100, bold=True, size=(1080,200), pos=(0,510))
+        self.fixed_layer.add_widget(self.title_label)
         self.size = (1080,1921)
+        self.size = (1080,1920)
 
     def hide(self, *args):
         anim = Animation(x=-1080.0, t='out_quad')
@@ -179,6 +138,7 @@ class InfoScreen(AppScreen):
         self.video.play = False
 
     def show(self, *args):
+        self.next_movie()
         self.x = 1080
         self.video.x = 1080
         anim = Animation(x=0.0, t='out_quad')
@@ -191,13 +151,16 @@ class InfoScreen(AppScreen):
         if self.collide_point(*touch.pos):
             self.app.goto(self.app.movie_screen)
 
+    def next_movie(self, *args):
+        self.movie = self.app.get_random_movie()
 
 
     def on_movie(self, *args):
+        self.title_label = self.movie.title
         self.video.play = False
         self.video.source = ''
         self.video.source = self.movie.trailer
-        self.video.bind(on_eos=self.on_movie)
+        self.video.bind(on_eos=self.next_movie)
         self.video.play = True
         
 
@@ -256,6 +219,11 @@ class MovieSummary(Label):
 class MovieVideo(Video):
     pass
 
+
+class IncButton(Button):
+    __metaclass__ = KivyWidgetMetaClass
+class DecButton(Button):
+    __metaclass__ = KivyWidgetMetaClass
 class BuyButton(Button):
     pass
 
@@ -271,9 +239,6 @@ class MovieScreen(AppScreen):
     '''
     def __init__(self, **kwargs):
         super(MovieScreen, self).__init__(**kwargs)
-        def print_self(*args):
-            print self.pos, self.size, self.video.pos
-        Clock.schedule_interval(print_self, 1.0)
 
         self.movie = self.app.get_random_movie()
 
@@ -307,20 +272,24 @@ class MovieScreen(AppScreen):
         self.select_ad()
 
         #movie_suggestions
-        self.bottom_layer = BoxLayout(size=(1080,1920*0.4))
+        self.bottom_layer = BoxLayout(size=(1080,1920*0.4), x=2000, orientation="vertical")
+        self.bottom_header = Image(source='images/header-suggestions.png', size_hint=(None, None), size=(1080,100))
+        self.bottom_layer.add_widget(self.bottom_header)
+        self.trailer_layer = BoxLayout()
+        self.bottom_layer.add_widget(self.trailer_layer)
         self.fixed_layer.add_widget(self.bottom_layer)
 
         self.trailer1 = MovieThumbnail(text="trailer 1")
         self.trailer1.movie = self.app.get_random_movie()
-        self.bottom_layer.add_widget(self.trailer1)
+        self.trailer_layer.add_widget(self.trailer1)
 
         self.trailer2 = MovieThumbnail(text="trailer 2")
         self.trailer2.movie = self.app.get_random_movie()
-        self.bottom_layer.add_widget(self.trailer2)
+        self.trailer_layer.add_widget(self.trailer2)
 
         self.trailer3 = MovieThumbnail(text="trailer 3")
         self.trailer3.movie = self.app.get_random_movie()
-        self.bottom_layer.add_widget(self.trailer3)
+        self.trailer_layer.add_widget(self.trailer3)
 
         #self.movie_view =  kvquery(self, kvid='feature').next()
     def select_movie(self, *args):
@@ -354,16 +323,23 @@ class MovieScreen(AppScreen):
 
 
     def select_ad(self, *args):
-        self.ad_image.source = self.app.get_random_ad()
+        fname = self.app.get_random_ad()
+        image_buffer = self.app.ad_images[fname]
+        self.ad_image._core_image = image_buffer
+        self.ad_image.texture = image_buffer.texture
         Clock.schedule_once(self.select_ad, 2.0)
 
     def finish_buy(self, *args):
+        print "GOING TO THANK YOU SCREEN"
         self.app.goto(self.app.thank_you_screen)
 
     def start_buy(self, touch):
         anim = Animation(x=0, t='out_elastic')
         anim.start(self.buy_widget)
 
+    def cancel_buy(self, touch):
+        anim = Animation(x=1920, t='out_elastic')
+        anim.start(self.buy_widget)
 
     def next_movie(self, *args):
         pass
@@ -372,19 +348,19 @@ class MovieScreen(AppScreen):
  
     def hide(self, *args):
         self.video.play = False
-        anim = Animation(x=-1080, t='out_quad')
+        anim = Animation(x=-1500, t='out_quad')
         anim.start(self.bottom_layer)
 
-        anim2 = Animation(x=-1080, t='out_quad')
+        anim2 = Animation(x=-1500, t='out_quad')
         anim2.start(self.ad_image)
 
-        anim3 = Animation(x=-1080, t='out_quad')
+        anim3 = Animation(x=-1500, t='out_quad')
         anim3.start(self.video)
     
-        self.buy_btn.x = 1920
-        self.movie_title.x=1080
-        self.movie_text.x=1080
-        self.buy_widget.x=1080
+        self.buy_btn.x = 2500
+        self.movie_title.x=1580
+        self.movie_text.x=1580
+        self.buy_widget.x=1580
 
 
     def show(self, *args):
@@ -427,7 +403,7 @@ class MovieKiosk(zmqapp.ZmqControlledApp):
 
 
     def get_random_ad(self):
-        return random.choice(['images/ad1.png', 'images/ad2.png'])
+        return random.choice(self.ad_images.keys())
 
 
     def goto(self, screen, animation=True):
@@ -447,20 +423,36 @@ class MovieKiosk(zmqapp.ZmqControlledApp):
         self.info_screen.show()
         self.active_screen = self.info_screen
 
+    def load_media(self):
+        self.ad_images = {}
+        self.video_data = {}
+
+        for fname in glob('content/ads/*.png'):
+            self.ad_images[fname] = ImageLoader.load(fname)
+
+        for fname in glob('content/trailers/*'):
+            self.video_data[fname] = VideoBuffer(filename=fname)
+
+    def print_fps(self, *args):
+        print "FPS:", Clock.get_fps()
+
 
     def build(self):
+
+        self.load_media()
 
         root = Widget(size=(1080,1920), size_hint=(None, None))
         
 
-        self.info_screen = InfoScreen(app=self)
-        root.add_widget(self.info_screen)
 
         self.movie_screen = MovieScreen(app=self)
         root.add_widget(self.movie_screen)
 
         self.thank_you_screen = ThankYouScreen(app=self)
         root.add_widget(self.thank_you_screen)
+
+        self.info_screen = InfoScreen(app=self)
+        root.add_widget(self.info_screen)
 
         self.layout = root
         viewport = Viewport(size=(1080,1920))
@@ -470,6 +462,7 @@ class MovieKiosk(zmqapp.ZmqControlledApp):
         viewport.add_widget(Image(source='images/logo.png', y=1620, size=(1080,300)))
 
         Clock.schedule_once(self.start)
+        Clock.schedule_interval(self.print_fps, 2.0)
         return viewport
 
 
