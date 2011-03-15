@@ -73,10 +73,10 @@
         BoxLayout:
             DecButton:
                 text: "Adults less"
-                on_release: if root.num_adults > 0 root.num_adults -=1
+                on_release: 0 if (root.num_adults > 0) else root.num_adults -=1
             DecButton:
                 text: "Kids less"
-                on_release: if root.num_kids > 0 root.num_kids -=1
+                on_release: 0 if (root.num_kids > 0) else root.num_kids -=1
         Label:
             text: "Total: $ %s" % (root.num_adults*8 + root.num_kids*5)
             font_size: 60
@@ -109,7 +109,7 @@
 
 <MovieSummary>
     font_size: 22
-    padding_x:10
+    padding: (10, 30)
     width: 1080
     height: self.texture_size[1]
     y: 820 -  self.height
@@ -142,7 +142,7 @@
     bold: True
     size_hint: (1,None)
     text_size: (300, None)
-    height: 100
+    height: 110
     
     canvas.before:
         Color:
@@ -162,6 +162,7 @@
 
 <ThumbnailDetails>:
     font_size: 16
+    padding_y: 20
 
 
 

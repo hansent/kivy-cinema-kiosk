@@ -17,6 +17,7 @@
 #    along with The Kivy Cinema Kiosk Demo.  If not, see <http://www.gnu.org/licenses/>.
 
 # general imports ###################################################
+import subprocess
 import random
 import shelve
 import zmqapp # zeroMQ for inter processes communication
@@ -32,6 +33,7 @@ from kivy.clock import Clock
 from kivy.factory import Factory
 
 
+from kivy.core.audio import Sound
 from kivy.core.image import ImageLoader
 from kivy.core.video import Video as VideoBuffer
 from kivy.graphics import *
@@ -54,7 +56,7 @@ from functools import partial
 
 
 # local impots & globals ##############################################
-movies = shelve.open('movie.shelve')
+#movies = shelve.open('movie.shelve')
 
 
 class KivyWidgetMetaClass(type):  
@@ -119,30 +121,38 @@ class InfoScreen(AppScreen):
 
     def __init__(self, **kwargs):
         super(InfoScreen, self).__init__(**kwargs)
-        self.fixed_layer = Widget(size_hint=(0,0), size=(0,0))
+        self.fixed_layer = Widget(size_hint=(None, None), size=(0,0))
         self.add_widget(self.fixed_layer)
 
         self.video = Video(text="video", pos=(0,900), size=(1080, 620))
         self.video.volume = 1.0
         self.fixed_layer.add_widget(self.video)
-        self.movie = self.app.get_random_movie()
-        self.title_label = Label(text=self.movie.title, font_size=100, bold=True, size=(1080,200), pos=(0,510))
+        self.title_label = Label(text="TITLE", text_size=(1080,None), font_size=80, bold=True, pos=(0,410), halign='center', width=1080)
         self.fixed_layer.add_widget(self.title_label)
+        self.movie = self.app.get_random_movie()
         self.size = (1080,1921)
         self.size = (1080,1920)
 
+
+
     def hide(self, *args):
-        anim = Animation(x=-1080.0, t='out_quad')
+        anim = Animation(x=-1280.0, t='out_quad')
         anim.start(self)
         anim.start(self.video)
+        anim.start(self.title_label)
         self.video.play = False
+
+        print "PLAY AUDIO FILE"
+        subprocess.Popen('aplay -q content/hello.wav', shell=True)
 
     def show(self, *args):
         self.next_movie()
         self.x = 1080
         self.video.x = 1080
+        self.title_label.x = 1080
         anim = Animation(x=0.0, t='out_quad')
         anim.start(self)
+        anim.start(self.title_label)
         anim.start(self.video)
 
 
@@ -156,7 +166,16 @@ class InfoScreen(AppScreen):
 
 
     def on_movie(self, *args):
-        self.title_label = self.movie.title
+
+        if len(self.movie.title) > 20:
+            self.title_label.font_size = 60
+        else:
+            self.title_label.font_size = 80
+        self.title_label.size = (1080, 400)
+        self.title_label.text_size = (1080, 500)
+        self.title_label.text = self.movie.title
+
+
         self.video.play = False
         self.video.source = ''
         self.video.source = self.movie.trailer
@@ -184,30 +203,32 @@ class MovieThumbnail(BoxLayout):
         self.details = ThumbnailDetails(text='Movie Details')
         self.add_widget(self.title)
         self.add_widget(self.video)
+        self.add_widget(Widget(size_hint=(1.0,0.2))) #padding
         self.add_widget(self.details)
-        self.add_widget(Widget()) #padding
+        self.add_widget(Widget(size_hint=(1.0,0.8))) #padding
 
     def on_movie(self, *args):
         if not self.movie:
             return
-
         self.title.text = self.movie.title
         self.title.text_size = (250, None)
         self.details.text = self.movie.summary[:200]+'...'
         self.details.text_size = (300, None)
-        self.video.source = ''
+
+
         self.video.source = self.movie.trailer
-        self.video.volume = 0
         self.video.play = False
         self.video.bind(on_eos=self.on_movie)
-        Clock.schedule_once(self.play, 0.5)
+        Clock.schedule_once(self.play,0.05)
 
     def play(self, *args):
+        self.video.volume = 0
         self.video.play = True
+        self.video.volume = 0
 
     def on_touch_down(self, touch):
         if self.collide_point(*touch.pos):
-            self.parent.parent.parent.select_movie()
+            self.parent.parent.parent.parent.select_movie(self.movie)
             return True
 
 class MovieTitle(Label):
@@ -250,7 +271,7 @@ class MovieScreen(AppScreen):
         self.video.volume = 1.0
         self.fixed_layer.add_widget(self.video)
 
-        self.movie_title = MovieTitle(text='Movie Title', pos=(1080,850), width=1080)
+        self.movie_title = MovieTitle(text='Movie Title', pos=(1080,750), width=1080)
         self.fixed_layer.add_widget(self.movie_title)
 
         self.movie_text = MovieSummary(text='Summary', x=1080, width=1080)
@@ -279,6 +300,25 @@ class MovieScreen(AppScreen):
         self.bottom_layer.add_widget(self.trailer_layer)
         self.fixed_layer.add_widget(self.bottom_layer)
 
+        self.trailer1 = None
+        self.trailer2 = None
+        self.trailer3 = None
+
+        #self.movie_view =  kvquery(self, kvid='feature').next()
+
+    def show_related(self, *args):
+        print "SHOW RELATED"
+        self.bottom_header.source = 'images/header-related.png'
+
+        anim = Animation(y=-340, t='out_quad')
+        anim.start(self.bottom_layer)
+
+        self.trailer1.video.play = False
+        self.trailer2.video.play = False
+        self.trailer3.video.play = False
+
+        for c in self.trailer_layer.children[:]:
+            self.trailer_layer.remove_widget(c)
         self.trailer1 = MovieThumbnail(text="trailer 1")
         self.trailer1.movie = self.app.get_random_movie()
         self.trailer_layer.add_widget(self.trailer1)
@@ -291,10 +331,15 @@ class MovieScreen(AppScreen):
         self.trailer3.movie = self.app.get_random_movie()
         self.trailer_layer.add_widget(self.trailer3)
 
-        #self.movie_view =  kvquery(self, kvid='feature').next()
-    def select_movie(self, *args):
-        anim = Animation(y=-400, t='out_quad')
+
+
+
+
+
+    def select_movie(self, selection, *args):
+        anim = Animation(y=-900, t='out_quad')
         anim.start(self.bottom_layer)
+        anim.bind(on_complete=self.show_related)
 
         anim2 = Animation(x=-1080, t='out_quad')
         anim2.start(self.ad_image)
@@ -302,15 +347,21 @@ class MovieScreen(AppScreen):
         anim3 = Animation(x=(1080*.7 -10), t='out_quad')
         anim3.start(self.buy_btn)
 
-
         anim4 = Animation(x=0, t='out_quad')
         anim4.start(self.video)
         anim4.start(self.movie_title)
         anim4.start(self.movie_text)
 
-        self.movie = self.app.get_random_movie()
+        anim5 = Animation(x=30, t='out_quad')
+        anim5.start(self.movie_title)
+
+
+        self.movie = selection 
         self.movie_title.text = self.movie.title
-        self.movie_title.text_size = (1030,500)
+        self.movie_title.text_size = (720,300)
+        self.movie_title.padding = (20,20)
+        self.movie_title.size = (700,300)
+
         self.movie_title.halign = 'left'
         self.movie_text.text = self.movie.summary[:800]
         
@@ -323,14 +374,13 @@ class MovieScreen(AppScreen):
 
 
     def select_ad(self, *args):
-        fname = self.app.get_random_ad()
+        fname = self.app.get_next_offer()
         image_buffer = self.app.ad_images[fname]
         self.ad_image._core_image = image_buffer
         self.ad_image.texture = image_buffer.texture
-        Clock.schedule_once(self.select_ad, 2.0)
+        Clock.schedule_once(self.select_ad, 7.0)
 
     def finish_buy(self, *args):
-        print "GOING TO THANK YOU SCREEN"
         self.app.goto(self.app.thank_you_screen)
 
     def start_buy(self, touch):
@@ -348,6 +398,10 @@ class MovieScreen(AppScreen):
  
     def hide(self, *args):
         self.video.play = False
+        if self.trailer1:
+            self.trailer1.video.play = False
+            self.trailer2.video.play = False
+            self.trailer3.video.play = False
         anim = Animation(x=-1500, t='out_quad')
         anim.start(self.bottom_layer)
 
@@ -364,7 +418,8 @@ class MovieScreen(AppScreen):
 
 
     def show(self, *args):
-
+        global movies
+        self.bottom_header.source = 'images/header-suggestions.png'
         self.buy_btn.x = 1920
         self.bottom_layer.pos = (1080,0)
         self.ad_image.x = 1080
@@ -379,6 +434,20 @@ class MovieScreen(AppScreen):
         self.movie_title.x=1080
         self.movie_text.x=1080
 
+        for c in self.trailer_layer.children[:]:
+            self.trailer_layer.remove_widget(c)
+        self.trailer1 = MovieThumbnail(text="trailer 1")
+        self.trailer1.movie = movies[self.app.suggestions[0]]
+        self.trailer_layer.add_widget(self.trailer1)
+
+        self.trailer2 = MovieThumbnail(text="trailer 2")
+        self.trailer2.movie = movies[self.app.suggestions[1]]
+        self.trailer_layer.add_widget(self.trailer2)
+
+        self.trailer3 = MovieThumbnail(text="trailer 3")
+        self.trailer3.movie = movies[self.app.suggestions[2]]
+        self.trailer_layer.add_widget(self.trailer3)
+
 
 class ThankYouScreen(AppScreen):
     def on_touch_up(self, touch):
@@ -386,8 +455,9 @@ class ThankYouScreen(AppScreen):
             self.app.goto(self.app.info_screen)
 
 
-
-
+from movie import Movie
+import sys, json
+movies = {}
 
 
 class MovieKiosk(zmqapp.ZmqControlledApp):
@@ -404,6 +474,12 @@ class MovieKiosk(zmqapp.ZmqControlledApp):
 
     def get_random_ad(self):
         return random.choice(self.ad_images.keys())
+
+
+    def get_next_offer(self):
+        old = self.offers.pop()
+        self.offers.append(old)
+        return self.offers[0]
 
 
     def goto(self, screen, animation=True):
@@ -423,23 +499,55 @@ class MovieKiosk(zmqapp.ZmqControlledApp):
         self.info_screen.show()
         self.active_screen = self.info_screen
 
-    def load_media(self):
-        self.ad_images = {}
-        self.video_data = {}
+    def load_data(self):
+        global movies
 
-        for fname in glob('content/ads/*.png'):
+        self.video_data = {}
+        for folder in glob('content/movies/*'):
+            movie_id = folder.split('/')[-1]
+            print movie_id
+            data = json.loads(open(folder+'/data.json').read())
+            movies[movie_id] = Movie(**data)
+            self.video_data[movie_id] = VideoBuffer(filename=movies[movie_id].trailer)
+            
+
+        #preload data, so it wont hang on loading
+        self.ad_images = {}
+        for fname in glob('content/offers/*.png'):
             self.ad_images[fname] = ImageLoader.load(fname)
 
-        for fname in glob('content/trailers/*'):
-            self.video_data[fname] = VideoBuffer(filename=fname)
+        self.offers = self.ad_images.keys()
+        self.suggestions = movies.keys()[:3]
 
     def print_fps(self, *args):
         print "FPS:", Clock.get_fps()
 
 
+
+
+    def process_zmq_message(self, msg):
+        print "priocessing:", msg
+        self.movie_screen.buy_widget.num_kids = msg['people']['kids']
+        self.movie_screen.buy_widget.num_adut = msg['people']['adult']
+        self.suggestions = msg['movies']
+        self.offers = msg['offers']
+        self.gender_mode = msg['gender']
+        self.welcome_audio_file = msg['audio_message']
+
+
+        if msg['people']['kids'] + msg['people']['kids'] == 0:
+            self.goto(self.info_screen)
+        else:
+            self.goto(self.movie_screen)
+        
+
+
+
+
+
     def build(self):
 
-        self.load_media()
+        self.load_data()
 
         root = Widget(size=(1080,1920), size_hint=(None, None))
         

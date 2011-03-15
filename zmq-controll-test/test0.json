@@ -1,0 +1,10 @@
+   {
+      "people": {
+         "adult": 3,
+         "kids":  1
+      },
+      "gender": "male",
+      "movies": ["dumbstruck", "frankenstein", "queentoplay"],
+      "offers": ["content/offers/ad1.png", "content/offers/ad2.png"],
+      "audio_message": "hello.wav"
+   }

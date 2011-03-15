@@ -21,6 +21,7 @@ import subprocess
 import urllib
 import shelve
 from movie import Movie
+import json, pprint
 
 
 
@@ -36,13 +37,15 @@ def download_trailer(url):
         return False  # no usch file...just ignore it
 
     #ok, have wget download it in teh background (unless already there)
-    wget_args = ['wget', '-q', '-N', '-U', 'QuickTime', url]
-    subprocess.Popen(wget_args, cwd='content/trailers')
+    #wget_args = ['wget', '-q', '-N', '-U', 'QuickTime', url]
+    #subprocess.Popen(wget_args, cwd='content/trailers')
     return True
 
 
 def get_movie_data():
-    movie_shelve = shelve.open('movie.shelve')
+    #movie_shelve = shelve.open('movie.shelve')
+
+    data = {}
 
     apple_rss = "http://trailers.apple.com/trailers/home/rss/newtrailers.rss"
     feed = feedparser.parse(apple_rss)
@@ -56,10 +59,13 @@ def get_movie_data():
         filename = key+'-tlr1_h480p.mov'
         if download_trailer(url+filename):
             title = e.title.rsplit('-',1)[0].strip() # only want movie title
-            movie = Movie(title, e.summary, 'content/trailers/'+filename)
-            movie_shelve[key] = movie
-
-    movie_shelve.close()
+            #movie = Movie(title, e.summary, 'content/trailers/'+filename)
+            #movie_shelve[key] = movie
+            data = {'title':title, 'summary':e.summary, 'trailer':'content/movies/'+key+"/"+filename, 'rating':'PG-13', 'related':['dumbstruck','dumbstruck','dumbstruck']}
+            print key
+            print json.dumps(data)
+            print 
+    #movie_shelve.close()
 
 
 

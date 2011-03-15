@@ -16,14 +16,29 @@
 #    You should have received a copy of the GNU General Public License
 #    along with The Kivy Cinema Kiosk Demo.  If not, see <http://www.gnu.org/licenses/>.
 
+import sys, json, pprint
+import zmq, inspect
 
-class Movie(object):
-    def __init__(self, title='', summary='', trailer='', related=[None, None, None], rating='PG-13'):
-        self.title = title
-        self.summary = summary
-        self.trailer = trailer
-        self.rating = rating
-        self.related = related
 
-    def __repr__(self):
-        return "Title:%s | Trailer:%s" % (self.title, self.trailer)
+
+
+
+class ZmqAppController(object):
+    def __init__(self, endpoint='tcp://127.0.0.1:5489'):
+        self.endpoint = endpoint
+        self._zmq_context = zmq.Context()
+        self._zmq_push_socket = self._zmq_context.socket(zmq.PUSH)
+        self._zmq_push_socket.bind(endpoint)
+
+    def send(self, msg):
+        self._zmq_push_socket.send_json(msg)
+        
+    
+
+
+if __name__ == "__main__":
+    ctrl = ZmqAppController()
+    kiosk_ctrl_msg = json.loads(open(sys.argv[1]).read())
+    print "sending message:"
+    pprint.pprint(kiosk_ctrl_msg)
+    ctrl.send(kiosk_ctrl_msg)
