@@ -154,6 +154,7 @@ class InfoScreen(AppScreen):
         anim.start(self)
         anim.start(self.title_label)
         anim.start(self.video)
+        self.app.set_logo_color(.2,.2,.2)
 
 
 
@@ -260,6 +261,14 @@ class BuyingOverlay(BoxLayout):
 
     def finish_buy(self, *args):
         self.parent.parent.finish_buy(*args)
+
+    def decr_adults(self, *args):
+        if self.num_adults > 0:
+            self.num_adults -= 1
+
+    def decr_kids(self, *args):
+        if self.num_kids > 0:
+            self.num_kids -= 1
 
 class MovieScreen(AppScreen):
     '''MovieScreen, lets user select a movie, and see related movies

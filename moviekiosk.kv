@@ -82,10 +82,10 @@
         BoxLayout:
             DecButton:
                 text: "Adults less"
-                on_release: 0 if (root.num_adults > 0) else root.num_adults -=1
+                on_release: root.decr_adults()
             DecButton:
                 text: "Kids less"
-                on_release: 0 if (root.num_kids > 0) else root.num_kids -=1
+                on_release: root.decr_kids()
         Label:
             text: "Total: $ %s" % (root.num_adults*8 + root.num_kids*5)
             font_size: 60
