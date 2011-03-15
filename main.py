@@ -322,7 +322,6 @@ class MovieScreen(AppScreen):
         #self.movie_view =  kvquery(self, kvid='feature').next()
 
     def show_related(self, *args):
-        print "SHOW RELATED"
         self.bottom_header.source = 'images/header-related.png'
 
         anim = Animation(y=-340, t='out_quad')
@@ -493,7 +492,7 @@ class MovieKiosk(zmqapp.ZmqControlledApp):
 
 
     def get_next_offer(self):
-        old = self.offers.pop()
+        old = self.offers.pop(0)
         self.offers.append(old)
         return self.offers[0]
 
