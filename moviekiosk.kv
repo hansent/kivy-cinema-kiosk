@@ -25,6 +25,15 @@
     size: (1080,1920)
     size_hint: (None, None)
 
+<LogoImage>
+    canvas.before:
+        Color:
+            rgb: self.bg_r, self.bg_g, self.bg_b
+        Rectangle:
+            pos:  self.x, self.y+18
+            size: self.size
+
+
 
 <Button>:
     font_size: 40

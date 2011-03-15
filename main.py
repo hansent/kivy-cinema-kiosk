@@ -31,7 +31,7 @@ from kivy.app import App
 from kivy.core.window import Window
 from kivy.clock import Clock
 from kivy.factory import Factory
-
+from kivy.utils import get_color_from_hex
 
 from kivy.core.audio import Sound
 from kivy.core.image import ImageLoader
@@ -241,6 +241,12 @@ class MovieVideo(Video):
     pass
 
 
+
+class LogoImage(Image):
+    bg_r = NumericProperty(.2)
+    bg_g = NumericProperty(.2)
+    bg_b = NumericProperty(.2)
+    __metaclass__ = KivyWidgetMetaClass
 class IncButton(Button):
     __metaclass__ = KivyWidgetMetaClass
 class DecButton(Button):
@@ -288,7 +294,7 @@ class MovieScreen(AppScreen):
 
 
         #ADD Images
-        self.ad_image = Image(pos=(1080,1920*0.4), size=(1080,1920*0.6))
+        self.ad_image = Image(pos=(1080,720), size=(1080,920))
         self.fixed_layer.add_widget(self.ad_image)
         self.select_ad()
 
@@ -455,6 +461,7 @@ class ThankYouScreen(AppScreen):
             self.app.goto(self.app.info_screen)
 
 
+
 from movie import Movie
 import sys, json
 movies = {}
@@ -523,6 +530,9 @@ class MovieKiosk(zmqapp.ZmqControlledApp):
         print "FPS:", Clock.get_fps()
 
 
+    def set_logo_color(self, r,g,b):
+        anim = Animation(bg_r=r, bg_g=g, bg_b=b, t='out_quad')
+        anim.start(self.logo)
 
 
     def process_zmq_message(self, msg):
@@ -531,8 +541,15 @@ class MovieKiosk(zmqapp.ZmqControlledApp):
         self.movie_screen.buy_widget.num_adut = msg['people']['adult']
         self.suggestions = msg['movies']
         self.offers = msg['offers']
-        self.gender_mode = msg['gender']
         self.welcome_audio_file = msg['audio_message']
+
+
+        self.gender_mode = msg.get('gender', 'neutral')
+
+        logo_color = msg.get('color', '#444444')
+        r,g,b,a = get_color_from_hex(logo_color)
+        self.set_logo_color(r,g,b)
+
 
 
         if msg['people']['kids'] + msg['people']['kids'] == 0:
@@ -567,7 +584,8 @@ class MovieKiosk(zmqapp.ZmqControlledApp):
         Clock.schedule_once(viewport.fit_to_window)
         viewport.add_widget(Image(source='images/mainbg.png', pos=(0,0), size=(1080,1920)))
         viewport.add_widget(root)
-        viewport.add_widget(Image(source='images/logo.png', y=1620, size=(1080,300)))
+        self.logo = LogoImage(source='images/logo.png', y=1620, size=(1080,300), bgcolor=[.1,.1,.1])
+        viewport.add_widget(self.logo)
 
         Clock.schedule_once(self.start)
         Clock.schedule_interval(self.print_fps, 2.0)
