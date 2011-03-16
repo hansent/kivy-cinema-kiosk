@@ -148,7 +148,6 @@
     width: 1080
     height: self.texture_size[1]
     y: 800 -  self.height
-    v_align: 'top'
 
 
 <MovieMetaInfo>
@@ -177,6 +176,13 @@
             size:self.size
             pos: self.pos
             source: 'images/buytickets.png'
+
+        Rectangle:
+            size: 600*self.width/600 ,800*self.width/600
+            pos: self.x, self.y-800*self.width/600
+            source: 'images/showtimes.png'
+
+
 
 
 <MovieThumbnail>:

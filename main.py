@@ -230,16 +230,16 @@ class MovieThumbnail(BoxLayout):
         self.details.text_size = (300, None)
 
 
-        self.video.source = self.movie.trailer
+        #self.video.source = self.movie.trailer
         self.video.play = False
-        self.video._video.seek(2.0)
-        self.video.bind(on_eos=self.on_movie)
-        Clock.schedule_once(self.play,0.05)
+        #self.video._video.seek(2.0)
+        #self.video.bind(on_eos=self.on_movie)
+        #Clock.schedule_once(self.play,0.05)
 
     def play(self, *args):
         self.video.volume = 0
-        self.video.play = True
-        self.video.volume = 0
+        #self.video.play = True
+        #self.video.volume = 0
 
     def on_touch_down(self, touch):
         if self.collide_point(*touch.pos):
@@ -258,6 +258,7 @@ class LogoImage(Image):
     
 
 class BuyButton(Button):
+    
     pass
 class BuyingOverlay(BoxLayout):
     num_adults = NumericProperty(2)
@@ -286,6 +287,8 @@ class RightButton(Button):
 class MovieTitle(Label):
     pass
 class MovieSummary(Label):
+    pass
+class MovieShowTimes(Video):
     pass
 class MovieVideo(Video):
     pass
@@ -389,10 +392,13 @@ class MovieScreen(AppScreen):
             if m == self.movie:
                 current_key = k
                 break
-        idx = self.app.suggestions.index(current_key) +1
 
-        next_key = self.app.suggestions[idx%len(self.app.suggestions)]
-        self.select_movie(movies[next_key])
+        try:
+            idx = self.app.suggestions.index(current_key) +1
+            next_key = self.app.suggestions[idx%len(self.app.suggestions)]
+            self.select_movie(movies[next_key])
+        except:
+            self.select_movie(movies.values()[0])
                 
 
     def goprev(self, *args):
@@ -402,9 +408,13 @@ class MovieScreen(AppScreen):
             if m == self.movie:
                 current_key = k
                 break
-        idx = self.app.suggestions.index(current_key) -1
-        next_key = self.app.suggestions[idx%len(self.app.suggestions)]
-        self.select_movie(movies[next_key])
+
+        try:
+            idx = self.app.suggestions.index(current_key) -1
+            next_key = self.app.suggestions[idx%len(self.app.suggestions)]
+            self.select_movie(movies[next_key])
+        except:
+            self.select_movie(movies.values()[0])
 
 
 
@@ -448,8 +458,9 @@ class MovieScreen(AppScreen):
 
 
         self.movie_text.text = self.movie.summary[:600]
-        self.movie_text.text_size = (700,500)
-        self.movie_text.size = (720,500)
+        self.movie_text.text_size = (700,None)
+        self.movie_text.width = 700
+        self.movie_meta.halign = 'left'
 
         self.video.play = False
         self.video.source = ''
