@@ -645,7 +645,7 @@ class MovieKiosk(zmqapp.ZmqControlledApp):
             return self.goto(self.info_screen)
         
         self.movie_screen.buy_widget.num_kids = msg['people']['kids']
-        self.movie_screen.buy_widget.num_adut = msg['people']['adult']
+        self.movie_screen.buy_widget.num_adults = msg['people']['adult']
         
         self.suggestions = msg['movies']
         self.offers = msg['offers']
