@@ -5,3 +5,11 @@ do
     echo "transcoding: "
     ffmpeg -i $movie -sameq ${movie%.*}.avi
 done
+
+
+
+for movie in $@ 
+do
+    echo "generating thumbnails: "
+    ffmpeg -ss 30 -i ${movie%.*}.avi -f image2 -vframes 1 ${movie%.*}.png
+done

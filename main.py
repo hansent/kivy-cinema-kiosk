@@ -165,6 +165,8 @@ class InfoScreen(AppScreen):
     def video_eos_check(self, *args):
         #eos event not working for some reason
         #so check every two seconds, to force new movie...
+        print "CHEKCING FOR EOS:"
+        print self.video.source, self.video.eos
         if self.video.eos:
             self.next_movie()
 
@@ -191,9 +193,9 @@ class InfoScreen(AppScreen):
 
 
         self.video.play = False
+        self.video.eos = False
         self.video.source = ''
         self.video.source = self.movie.trailer
-        self.video.play = True
         Clock.schedule_once(self.play, 0.1)
         
 
@@ -203,7 +205,7 @@ class ThumbnailTitle(Label):
     pass
 class ThumbnailDetails(Label):
     pass
-class ThumbnailVideo(Video):
+class ThumbnailVideo(Image):
     pass
 
 class MovieThumbnail(BoxLayout):
@@ -230,14 +232,15 @@ class MovieThumbnail(BoxLayout):
         self.details.text_size = (300, None)
 
 
-        #self.video.source = self.movie.trailer
-        self.video.play = False
+        self.video.source = self.movie.trailer.replace('.avi', '.png')
+        #self.video.play = False
         #self.video._video.seek(2.0)
         #self.video.bind(on_eos=self.on_movie)
         #Clock.schedule_once(self.play,0.05)
 
     def play(self, *args):
-        self.video.volume = 0
+        pass
+        #self.video.volume = 0
         #self.video.play = True
         #self.video.volume = 0
 
