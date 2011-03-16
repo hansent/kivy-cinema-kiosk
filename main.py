@@ -613,7 +613,7 @@ class MovieKiosk(zmqapp.ZmqControlledApp):
             #print movie_id
             data = json.loads(open(folder+'/data.json').read())
             movies[movie_id] = Movie(**data)
-            self.video_data[movie_id] = VideoBuffer(filename=movies[movie_id].trailer)
+            #self.video_data[movie_id] = VideoBuffer(filename=movies[movie_id].trailer)
             
 
         #preload data, so it wont hang on loading
