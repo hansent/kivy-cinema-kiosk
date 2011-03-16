@@ -34,7 +34,6 @@
             size: self.size
 
 
-
 <Button>:
     font_size: 40
 
@@ -121,8 +120,23 @@
     padding: (10, 30)
     width: 1080
     height: self.texture_size[1]
-    y: 820 -  self.height
+    y: 800 -  self.height
     v_align: 'top'
+
+
+<MovieMetaInfo>
+    font_size: 30
+    height: 100
+    width: 1080
+    padding_x: 10
+    padding_y: 10
+    text_size: (1000,100)
+    halign: 'left'
+    bold: True
+    text: "Rating: " + self.rating
+
+
+
 
 <MovieScreen>
     size: (1080,1920)
