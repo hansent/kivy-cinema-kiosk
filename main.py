@@ -149,7 +149,7 @@ class InfoScreen(AppScreen):
         self.x = 1080
         self.video.x = 1080
         self.title_label.x = 1080
-        anim = Animation(x=0.0, t='out_quad')
+        anim = Animation(x=0.0, t='out_quad',d=0.7)
         anim.start(self)
         anim.start(self.title_label)
         anim.start(self.video)
@@ -539,9 +539,11 @@ class MovieScreen(AppScreen):
 
 
 class ThankYouScreen(AppScreen):
-    def show(self,*args):
-        super(self, ThankYouScreen).show(*args)
-        Clock.schedule_once(partial)
+    def show(self, *args):
+        self.x = 1080
+        anim = Animation(x=0.0, t='out_quad', d=0.7)
+        anim.start(self)
+        Clock.schedule_once(partial(self.app.goto, self.app.info_screen), 4.0)
 
 
 from movie import Movie
