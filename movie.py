@@ -18,12 +18,13 @@
 
 
 class Movie(object):
-    def __init__(self, title='', summary='', trailer='', related=[None, None, None], rating='PG-13'):
+    def __init__(self, title='', summary='', trailer='', related=[None, None, None], rating='PG-13', show_times=[]):
         self.title = title
         self.summary = summary
         self.trailer = trailer
         self.rating = rating
         self.related = related
+        self.show_times = show_times
 
     def __repr__(self):
         return "Title:%s | Trailer:%s" % (self.title, self.trailer)

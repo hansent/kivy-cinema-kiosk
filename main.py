@@ -163,11 +163,15 @@ class InfoScreen(AppScreen):
             self.app.goto(self.app.movie_screen)
 
     def next_movie(self, *args):
-        self.movie = self.app.get_random_movie()
+        movie = self.app.get_random_movie()
+        while movie == self.movie:
+            movie = self.app.get_random_movie()
+
 
 
     def on_movie(self, *args):
-
+        if not self.movie:
+            return
         if len(self.movie.title) > 20:
             self.title_label.font_size = 60
         else:
@@ -224,22 +228,14 @@ class MovieThumbnail(BoxLayout):
 
     def play(self, *args):
         self.video.volume = 0
-        self.video.play = True
-        self.video.volume = 0
+        #self.video.play = True
+        #self.video.volume = 0
 
     def on_touch_down(self, touch):
         if self.collide_point(*touch.pos):
             self.parent.parent.parent.parent.select_movie(self.movie)
             return True
 
-class MovieTitle(Label):
-    pass
-
-class MovieSummary(Label):
-    pass
-
-class MovieVideo(Video):
-    pass
 
 
 
@@ -254,6 +250,18 @@ class DecButton(Button):
     __metaclass__ = KivyWidgetMetaClass
 class BuyButton(Button):
     pass
+
+class MovieTitle(Label):
+    pass
+class MovieSummary(Label):
+    pass
+class MovieVideo(Video):
+    pass
+class MovieMetaInfo(Label):
+    __metaclass__ = KivyWidgetMetaClass
+    rating = StringProperty('PG-13')
+
+    
 
 class BuyingOverlay(BoxLayout):
     num_adults = NumericProperty(2)
@@ -286,15 +294,29 @@ class MovieScreen(AppScreen):
         self.video.volume = 1.0
         self.fixed_layer.add_widget(self.video)
 
-        self.movie_title = MovieTitle(text='Movie Title', pos=(1080,750), width=1080)
+        self.movie_title = MovieTitle(text='Movie Title', pos=(1080,780), width=1080)
         self.fixed_layer.add_widget(self.movie_title)
+
+        self.movie_meta = MovieMetaInfo(rating="PG13", y=810)
+        self.fixed_layer.add_widget(self.movie_meta)
 
         self.movie_text = MovieSummary(text='Summary', x=1080, width=1080)
         self.fixed_layer.add_widget(self.movie_text)
 
+        self.meta_info = MovieMetaInfo()
+
+
+        self.prev_btn = Button(size=(200,300), pos=(850,1100), text=">")
+        self.prev_btn.bind(on_release=self.goprev)
+        self.fixed_layer.add_widget(self.prev_btn)
+
+        self.next_btn = Button(size=(200,300), pos=(20,1100), text="<")
+        self.next_btn.bind(on_release=self.gonext)
+        self.fixed_layer.add_widget(self.next_btn)
+
 
         #buying tickets
-        self.buy_btn = BuyButton(size=(1080*.3,100), pos=(1080*.7,850))
+        self.buy_btn = BuyButton(size=(1080*.3,100), pos=(1080*.7,890))
         self.buy_btn.bind(on_release=self.start_buy)
         self.fixed_layer.add_widget(self.buy_btn)
 
@@ -318,8 +340,6 @@ class MovieScreen(AppScreen):
         self.trailer1 = None
         self.trailer2 = None
         self.trailer3 = None
-
-        #self.movie_view =  kvquery(self, kvid='feature').next()
 
     def show_related(self, *args):
         self.bottom_header.source = 'images/header-related.png'
@@ -346,7 +366,29 @@ class MovieScreen(AppScreen):
         self.trailer_layer.add_widget(self.trailer3)
 
 
+    def gonext(self, *args):
+        global movies
+        current_key = ""
+        for k, m in movies.iteritems():
+            if m == self.movie:
+                current_key = k
+                break
+        idx = self.app.suggestions.index(current_key) +1
 
+        next_key = self.app.suggestions[idx%len(self.app.suggestions)]
+        self.select_movie(movies[next_key])
+                
+
+    def goprev(self, *args):
+        global movies
+        current_key = ""
+        for k, m in movies.iteritems():
+            if m == self.movie:
+                current_key = k
+                break
+        idx = self.app.suggestions.index(current_key) -1
+        next_key = self.app.suggestions[idx%len(self.app.suggestions)]
+        self.select_movie(movies[next_key])
 
 
 
@@ -363,11 +405,11 @@ class MovieScreen(AppScreen):
 
         anim4 = Animation(x=0, t='out_quad')
         anim4.start(self.video)
-        anim4.start(self.movie_title)
         anim4.start(self.movie_text)
 
         anim5 = Animation(x=30, t='out_quad')
         anim5.start(self.movie_title)
+        anim5.start(self.movie_meta)
 
 
         self.movie = selection 
@@ -375,11 +417,18 @@ class MovieScreen(AppScreen):
         self.movie_title.text_size = (720,300)
         self.movie_title.padding = (20,20)
         self.movie_title.size = (700,300)
-
         self.movie_title.halign = 'left'
+
+
+        self.movie_meta.text = "Rated: "+self.movie.rating
+        self.movie_meta.text_size = (1080,100)
+        self.movie_meta.size = (1080,100)
+        self.movie_meta.halign = 'left'
+
+
         self.movie_text.text = self.movie.summary[:800]
-        
         self.movie_text.text_size = (1030,500)
+
         self.video.play = False
         self.video.source = ''
         self.video.source = self.movie.trailer
@@ -428,6 +477,7 @@ class MovieScreen(AppScreen):
         self.buy_btn.x = 2500
         self.movie_title.x=1580
         self.movie_text.x=1580
+        self.movie_meta.x=1580
         self.buy_widget.x=1580
 
 
@@ -446,6 +496,7 @@ class MovieScreen(AppScreen):
         anim2.start(self.ad_image)
 
         self.movie_title.x=1080
+        self.movie_meta.x=1080
         self.movie_text.x=1080
 
         for c in self.trailer_layer.children[:]:
