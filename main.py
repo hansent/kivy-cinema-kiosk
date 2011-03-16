@@ -74,7 +74,7 @@ class KivyWidgetMetaClass(type):
     def __init__(self, name, bases, attrs):  
         super(KivyWidgetMetaClass, self).__init__(name, bases, attrs)
         Factory.register(name, self)
-        print "Registered %s in kivy Widget Factory" % name 
+        #print "Registered %s in kivy Widget Factory" % name 
 
 
 
@@ -94,9 +94,9 @@ class Viewport(ScatterPlane):
             self.scale = Window.height/float(self.width)
             self.rotation = 90
         self.pos = (0,0)
-        for sc in self.children:
-            for s in sc.children:
-                print s.__class__, s.size
+        #for sc in self.children:
+        #    for s in sc.children:
+        #        print s.__class__, s.size
 
 
 
@@ -165,8 +165,8 @@ class InfoScreen(AppScreen):
     def video_eos_check(self, *args):
         #eos event not working for some reason
         #so check every two seconds, to force new movie...
-        print "CHEKCING FOR EOS:"
-        print self.video.source, self.video.eos
+        #print "CHEKCING FOR EOS:"
+        #print self.video.source, self.video.eos
         if self.video.eos:
             self.next_movie()
 
@@ -389,7 +389,7 @@ class MovieScreen(AppScreen):
 
     def gonext(self, *args):
         global movies
-        print self.video.position
+        #print self.video.position
         current_key = ""
         for k, m in movies.iteritems():
             if m == self.movie:
@@ -610,7 +610,7 @@ class MovieKiosk(zmqapp.ZmqControlledApp):
         self.video_data = {}
         for folder in glob('content/movies/*'):
             movie_id = folder.split('/')[-1]
-            print movie_id
+            #print movie_id
             data = json.loads(open(folder+'/data.json').read())
             movies[movie_id] = Movie(**data)
             self.video_data[movie_id] = VideoBuffer(filename=movies[movie_id].trailer)
