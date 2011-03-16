@@ -1,0 +1,7 @@
+#!/bin/bash
+
+for movie in $@ 
+do
+    echo "transcoding: "
+    ffmpeg -i $movie -sameq ${movie%.*}.avi
+done

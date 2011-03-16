@@ -133,7 +133,7 @@ class InfoScreen(AppScreen):
         self.size = (1080,1921)
         self.size = (1080,1920)
 
-
+        Clock.schedule_interval(self.video_eos_check,2.0 )
 
     def hide(self, *args):
         anim = Animation(x=-1280.0, t='out_quad')
@@ -161,6 +161,13 @@ class InfoScreen(AppScreen):
         if self.collide_point(*touch.pos):
             self.app.goto(self.app.movie_screen)
 
+
+    def video_eos_check(self, *args):
+        #eos event not working for some reason
+        #so check every two seconds, to force new movie...
+        if self.video.eos:
+            self.next_movie()
+
     def next_movie(self, *args):
         movie = self.app.get_random_movie()
         while movie == self.movie:
@@ -172,7 +179,6 @@ class InfoScreen(AppScreen):
 
 
     def on_movie(self, *args):
-        print "ON MOVIE", self.movie
         if not self.movie:
             return
         if len(self.movie.title) > 20:
@@ -187,7 +193,6 @@ class InfoScreen(AppScreen):
         self.video.play = False
         self.video.source = ''
         self.video.source = self.movie.trailer
-        self.video.bind(on_eos=self.next_movie)
         self.video.play = True
         Clock.schedule_once(self.play, 0.1)
         
@@ -227,13 +232,14 @@ class MovieThumbnail(BoxLayout):
 
         self.video.source = self.movie.trailer
         self.video.play = False
+        self.video._video.seek(2.0)
         self.video.bind(on_eos=self.on_movie)
         Clock.schedule_once(self.play,0.05)
 
     def play(self, *args):
         self.video.volume = 0
-        #self.video.play = True
-        #self.video.volume = 0
+        self.video.play = True
+        self.video.volume = 0
 
     def on_touch_down(self, touch):
         if self.collide_point(*touch.pos):
@@ -248,25 +254,11 @@ class LogoImage(Image):
     bg_g = NumericProperty(.2)
     bg_b = NumericProperty(.2)
     __metaclass__ = KivyWidgetMetaClass
-class IncButton(Button):
-    __metaclass__ = KivyWidgetMetaClass
-class DecButton(Button):
-    __metaclass__ = KivyWidgetMetaClass
-class BuyButton(Button):
-    pass
-
-class MovieTitle(Label):
-    pass
-class MovieSummary(Label):
-    pass
-class MovieVideo(Video):
-    pass
-class MovieMetaInfo(Label):
-    __metaclass__ = KivyWidgetMetaClass
-    rating = StringProperty('PG-13')
 
     
 
+class BuyButton(Button):
+    pass
 class BuyingOverlay(BoxLayout):
     num_adults = NumericProperty(2)
     num_kids = NumericProperty(0)
@@ -281,6 +273,25 @@ class BuyingOverlay(BoxLayout):
     def decr_kids(self, *args):
         if self.num_kids > 0:
             self.num_kids -= 1
+
+
+class IncButton(Button):
+    __metaclass__ = KivyWidgetMetaClass
+class DecButton(Button):
+    __metaclass__ = KivyWidgetMetaClass
+class LeftButton(Button):
+    __metaclass__ = KivyWidgetMetaClass
+class RightButton(Button):
+    __metaclass__ = KivyWidgetMetaClass
+class MovieTitle(Label):
+    pass
+class MovieSummary(Label):
+    pass
+class MovieVideo(Video):
+    pass
+class MovieMetaInfo(Label):
+    __metaclass__ = KivyWidgetMetaClass
+    rating = StringProperty('PG-13')
 
 class MovieScreen(AppScreen):
     '''MovieScreen, lets user select a movie, and see related movies
@@ -310,11 +321,11 @@ class MovieScreen(AppScreen):
         self.meta_info = MovieMetaInfo()
 
 
-        self.prev_btn = Button(size=(200,300), pos=(850,1100), text=">")
+        self.prev_btn = LeftButton(size=(150,250), pos=(0,1200))
         self.prev_btn.bind(on_release=self.goprev)
         self.fixed_layer.add_widget(self.prev_btn)
 
-        self.next_btn = Button(size=(200,300), pos=(20,1100), text="<")
+        self.next_btn = RightButton(size=(150,250), pos=(930,1200))
         self.next_btn.bind(on_release=self.gonext)
         self.fixed_layer.add_widget(self.next_btn)
 
@@ -372,6 +383,7 @@ class MovieScreen(AppScreen):
 
     def gonext(self, *args):
         global movies
+        print self.video.position
         current_key = ""
         for k, m in movies.iteritems():
             if m == self.movie:
@@ -397,23 +409,28 @@ class MovieScreen(AppScreen):
 
 
     def select_movie(self, selection, *args):
-        anim = Animation(y=-900, t='out_quad')
+        anim = Animation(y=-900, t='out_quad',d=0.7)
         anim.start(self.bottom_layer)
         anim.bind(on_complete=self.show_related)
 
-        anim2 = Animation(x=-1080, t='out_quad')
+        anim2 = Animation(x=-1080, t='out_quad',d=0.7)
         anim2.start(self.ad_image)
 
-        anim3 = Animation(x=(1080*.7 -10), t='out_quad')
+        anim3 = Animation(x=(1080*.7 -10), t='out_quad',d=0.7)
         anim3.start(self.buy_btn)
 
-        anim4 = Animation(x=0, t='out_quad')
+        anim4 = Animation(x=0, t='out_quad',d=0.7)
+        anim4.start(self.prev_btn)
         anim4.start(self.video)
-        anim4.start(self.movie_text)
 
-        anim5 = Animation(x=30, t='out_quad')
+
+        animnb = Animation(x=930, t='out_quad',d=0.7)
+        animnb.start(self.next_btn)
+
+        anim5 = Animation(x=30, t='out_quad',d=0.7)
         anim5.start(self.movie_title)
         anim5.start(self.movie_meta)
+        anim5.start(self.movie_text)
 
 
         self.movie = selection 
@@ -430,8 +447,9 @@ class MovieScreen(AppScreen):
         self.movie_meta.halign = 'left'
 
 
-        self.movie_text.text = self.movie.summary[:800]
-        self.movie_text.text_size = (1030,500)
+        self.movie_text.text = self.movie.summary[:600]
+        self.movie_text.text_size = (700,500)
+        self.movie_text.size = (720,500)
 
         self.video.play = False
         self.video.source = ''
@@ -469,17 +487,19 @@ class MovieScreen(AppScreen):
             self.trailer1.video.play = False
             self.trailer2.video.play = False
             self.trailer3.video.play = False
-        anim = Animation(x=-1500, t='out_quad')
+        anim = Animation(x=-1500, t='out_quad', d=0.7)
         anim.start(self.bottom_layer)
 
-        anim2 = Animation(x=-1500, t='out_quad')
+        anim2 = Animation(x=-1500, t='out_quad', d=0.7)
         anim2.start(self.ad_image)
 
-        anim3 = Animation(x=-1500, t='out_quad')
+        anim3 = Animation(x=-1500, t='out_quad',d=0.7)
         anim3.start(self.video)
     
         self.buy_btn.x = 2500
         self.movie_title.x=1580
+        self.next_btn.x=1580+930
+        self.prev_btn.x=1580
         self.movie_text.x=1580
         self.movie_meta.x=1580
         self.buy_widget.x=1580
@@ -493,10 +513,10 @@ class MovieScreen(AppScreen):
         self.ad_image.x = 1080
         self.video.x = 1080
 
-        anim = Animation(x=0, t='out_quad')
+        anim = Animation(x=0, t='out_quad', d=0.7)
         anim.start(self.bottom_layer)
  
-        anim2 = Animation(x=0, t='out_quad')
+        anim2 = Animation(x=0, t='out_quad', d=0.7)
         anim2.start(self.ad_image)
 
         self.movie_title.x=1080
@@ -519,10 +539,9 @@ class MovieScreen(AppScreen):
 
 
 class ThankYouScreen(AppScreen):
-    def on_touch_up(self, touch):
-        if self.collide_point(*touch.pos):
-            self.app.goto(self.app.info_screen)
-
+    def show(self,*args):
+        super(self, ThankYouScreen).show(*args)
+        Clock.schedule_once(partial)
 
 
 from movie import Movie
