@@ -142,7 +142,6 @@ class InfoScreen(AppScreen):
         anim.start(self.title_label)
         self.video.play = False
 
-        print "PLAY AUDIO FILE"
         subprocess.Popen('aplay -q content/hello.wav', shell=True)
 
     def show(self, *args):
@@ -166,10 +165,14 @@ class InfoScreen(AppScreen):
         movie = self.app.get_random_movie()
         while movie == self.movie:
             movie = self.app.get_random_movie()
+        self.movie = movie
 
+    def play(self, *args):
+        self.video.play = True
 
 
     def on_movie(self, *args):
+        print "ON MOVIE", self.movie
         if not self.movie:
             return
         if len(self.movie.title) > 20:
@@ -186,6 +189,7 @@ class InfoScreen(AppScreen):
         self.video.source = self.movie.trailer
         self.video.bind(on_eos=self.next_movie)
         self.video.play = True
+        Clock.schedule_once(self.play, 0.1)
         
 
 
