@@ -171,10 +171,9 @@ class InfoScreen(AppScreen):
             self.next_movie()
 
     def next_movie(self, *args):
-        movie = self.app.get_random_movie()
-        while movie == self.movie:
-            movie = self.app.get_random_movie()
-        self.movie = movie
+        current_movie = self.movie;
+        while current_movie == self.movie:
+            self.movie = self.app.get_random_movie();
 
     def play(self, *args):
         self.video.play = True
