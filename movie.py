@@ -28,3 +28,6 @@ class Movie(object):
 
 	def __repr__(self):
 		return "Title:%s | Trailer:%s" % (self.title, self.trailer)
+
+	def set_trailer(self, filepath):
+		self.trailer = filepath;
