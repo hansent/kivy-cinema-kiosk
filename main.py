@@ -612,6 +612,7 @@ class MovieKiosk(zmqapp.ZmqControlledApp):
 			#print movie_id
 			data = json.loads(open(folder+'/data.json').read())
 			movies[movie_id] = Movie(**data)
+			movies[movie_id].set_trailer(folder+'/trailer.avi');
 			#self.video_data[movie_id] = VideoBuffer(filename=movies[movie_id].trailer)
 			
 
