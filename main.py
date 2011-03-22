@@ -20,8 +20,13 @@
 import subprocess
 import random
 import shelve
-import zmqapp # zeroMQ for inter processes communication
 from glob import glob
+
+import threading
+import socket
+import struct
+import json
+import time
 
 # kivy imports ######################################################
 import kivy
@@ -562,11 +567,114 @@ class ThankYouScreen(AppScreen):
 from movie import Movie
 import sys, json
 movies = {}
+	
+class SockThread(threading.Thread):
+	def __init__(self, address='127.0.0.1', **kwargs):
+		""" TODO: remove this by adding IPC pipe """
+		super(SockThread, self).__init__(**kwargs)
+		self.isAlive = False
+		self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+		self.socket.settimeout(2.0)
+		
+		self.PORT = 5489
+		self.ADDRESS = address
+		self.msgLock = threading.Lock()
+		self.pending = False
+		
+	def connect(self):
+		for i in range(10):
+			try:
+				self.socket.connect((self.ADDRESS, self.PORT))
+			except socket.error as msg:
+				print "SockThread Error: %s" % msg
+				time.sleep(3)
+				continue;
+			print "...Socket Connected"
+			return True
+		return False
 
+	def sendObj(self, obj):
+		msg = json.dumps(obj)
+		if self.socket:
+			frmt = "=%ds" % len(msg)
+			packedMsg = struct.pack(frmt, msg)
+			packedHdr = struct.pack('=I', len(packedMsg))
+			
+			self._send(packedHdr)
+			self._send(packedMsg)
+			
+	def _send(self, msg):
+		sent = 0
+		while sent < len(msg):
+			sent += self.socket.send(msg[sent:])
+			
+	def _read(self, size):
+		data = ''
+		while len(data) < size:
+			data += self.socket.recv(size-len(data))
+		return data
 
-class MovieKiosk(zmqapp.ZmqControlledApp):
+	def _msgLength(self):
+		d = self._read(4)
+		s = struct.unpack('=I', d)
+		return s[0]
+	
+	def _readMsg(self):
+		size = self._msgLength()
+		data = self._read(size)
+		frmt = "=%ds" % size
+		msg = struct.unpack(frmt,data)
+		return json.loads(msg[0])
+
+	def stop(self):
+		self.isAlive = False
+		
+	def isPending(self):
+		return self.pending
+	
+	def getMsg(self):
+		self.msgLock.acquire()
+		self.pending = False
+		tmpMsg = self.msg
+		self.msgLock.release()
+		return tmpMsg
+		
+	def run(self):
+		self.isAlive = True
+		while self.isAlive:
+			msg = ''
+			try:
+				msg = self._readMsg()
+			except socket.timeout as e:
+				print "socket.timeout: %s" % e
+				continue
+			except Exception as e:
+				print "%s" % e
+				break
+			if msg != '':
+				self.msgLock.acquire()
+				self.msg = msg
+				self.pending = True
+				self.msgLock.release()
+
+class MovieKiosk(App):
 	'''MovieKioskApp is the application controler.
 	'''
+	def __init__(self, **kwargs):
+		super(MovieKiosk, self).__init__(**kwargs)
+		self.sockThread = SockThread()
+
+	def on_start(self):
+		if self.sockThread.connect():
+			self.sockThread.sendObj({"message": "new connection"})
+			self.sockThread.start()
+			# TODO: remove this by adding IPC pipe
+			Clock.schedule_interval(self.message_check, 0.1)
+		else:
+			self.sockThread.stop()
+	
+	def on_stop(self):
+		self.sockThread.stop()
 
 	def get_random_movie(self):
 		return random.choice(movies.values())
@@ -574,17 +682,13 @@ class MovieKiosk(zmqapp.ZmqControlledApp):
 	def get_random_movies(self, n=3):
 		return random.sample(movies.values(), n)
 
-
-
 	def get_random_ad(self):
 		return random.choice(self.ad_images.keys())
-
 
 	def get_next_offer(self):
 		old = self.offers.pop(0)
 		self.offers.append(old)
 		return self.offers[0]
-
 
 	def goto(self, screen, animation=True):
 		if screen == self.active_screen:
@@ -595,7 +699,6 @@ class MovieKiosk(zmqapp.ZmqControlledApp):
 		self.layout.add_widget(screen)
 		screen.show()
 		self.active_screen = screen
-
 
 	def start(self, *args):
 		self.movie_screen.hide()
@@ -610,12 +713,11 @@ class MovieKiosk(zmqapp.ZmqControlledApp):
 		for folder in glob('content/movies/*'):
 			movie_id = folder.split('/')[-1]
 			#print movie_id
-			data = json.loads(open(folder+'/data.json').read())
-			movies[movie_id] = Movie(**data)
+			movie_data = json.loads(open(folder+'/data.json').read())
+			movies[movie_id] = Movie(movie_data)
 			movies[movie_id].set_trailer(folder+'/trailer.avi');
 			#self.video_data[movie_id] = VideoBuffer(filename=movies[movie_id].trailer)
 			
-
 		#preload data, so it wont hang on loading
 		self.ad_images = {}
 		for fname in glob('content/offers/*.png'):
@@ -631,9 +733,13 @@ class MovieKiosk(zmqapp.ZmqControlledApp):
 	def set_logo_color(self, r,g,b):
 		anim = Animation(bg_r=r, bg_g=g, bg_b=b, t='out_quad')
 		anim.start(self.logo)
+		
+	def message_check(self, td):
+		""" TODO: remove this by adding IPC pipe """
+		if self.sockThread.isPending():
+			self.process_message(self.sockThread.getMsg())
 
-
-	def process_zmq_message(self, msg):
+	def process_message(self, msg):
 		print "processing:", msg
 		logo_color = msg.get('color', '#444444')
 		r,g,b,a = get_color_from_hex(logo_color)
@@ -660,8 +766,6 @@ class MovieKiosk(zmqapp.ZmqControlledApp):
 
 		root = Widget(size=(1080,1920), size_hint=(None, None))
 		
-
-
 		self.movie_screen = MovieScreen(app=self)
 		root.add_widget(self.movie_screen)
 
