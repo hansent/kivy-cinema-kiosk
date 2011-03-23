@@ -129,13 +129,13 @@ class InfoScreen(AppScreen):
 		self.fixed_layer = Widget(size_hint=(None, None), size=(0,0))
 		self.add_widget(self.fixed_layer)
 
-		self.video = Video(text="video", pos=(0,900), size=(1080, 620))
+		self.video = Video(text="video", pos=(0,700), size=(1080, 920))
 		self.video.volume = 1.0
 		self.fixed_layer.add_widget(self.video)
 		self.title_label = Label(text="TITLE", text_size=(1080,None), font_size=80, bold=True, pos=(0,410), halign='center', width=1080)
 		self.fixed_layer.add_widget(self.title_label)
 		self.movie = self.app.get_random_movie()
-		self.size = (1080,1921)
+		#self.size = (1080,1921)
 		self.size = (1080,1920)
 
 		Clock.schedule_interval(self.video_eos_check,2.0 )
@@ -315,7 +315,7 @@ class MovieScreen(AppScreen):
 		self.add_widget(self.fixed_layer)
 
 		#video player
-		self.video = MovieVideo(text="video", pos=(1080,1000), size=(1080, 620))
+		self.video = MovieVideo(text="video", pos=(1080,1000), size=(1080, 920))
 		self.video.volume = 1.0
 		self.fixed_layer.add_widget(self.video)
 
@@ -588,7 +588,7 @@ class SockThread(threading.Thread):
 			except socket.error as msg:
 				print "SockThread Error: %s" % msg
 				time.sleep(3)
-				continue;
+				continue
 			print "...Socket Connected"
 			return True
 		return False
