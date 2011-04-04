@@ -129,13 +129,13 @@ class InfoScreen(AppScreen):
 		self.fixed_layer = Widget(size_hint=(None, None), size=(0,0))
 		self.add_widget(self.fixed_layer)
 
-		self.video = Video(text="video", pos=(0,900), size=(1080, 620))
+		self.video = Video(text="video", pos=(0,700), size=(1080, 920))
 		self.video.volume = 1.0
 		self.fixed_layer.add_widget(self.video)
 		self.title_label = Label(text="TITLE", text_size=(1080,None), font_size=80, bold=True, pos=(0,410), halign='center', width=1080)
 		self.fixed_layer.add_widget(self.title_label)
 		self.movie = self.app.get_random_movie()
-		self.size = (1080,1921)
+		#self.size = (1080,1921)
 		self.size = (1080,1920)
 
 		Clock.schedule_interval(self.video_eos_check,2.0 )
@@ -146,6 +146,7 @@ class InfoScreen(AppScreen):
 		anim.start(self.video)
 		anim.start(self.title_label)
 		self.video.play = False
+		self.video._video.stop()
 
 		subprocess.Popen('aplay -q content/hello.wav', shell=True)
 
@@ -315,7 +316,7 @@ class MovieScreen(AppScreen):
 		self.add_widget(self.fixed_layer)
 
 		#video player
-		self.video = MovieVideo(text="video", pos=(1080,1000), size=(1080, 620))
+		self.video = MovieVideo(text="video", pos=(1080,1000), size=(1080, 920))
 		self.video.volume = 1.0
 		self.fixed_layer.add_widget(self.video)
 
@@ -487,10 +488,12 @@ class MovieScreen(AppScreen):
 		self.app.goto(self.app.thank_you_screen)
 
 	def start_buy(self, touch):
+		self.video.play = False
 		anim = Animation(x=0, t='out_elastic')
 		anim.start(self.buy_widget)
 
 	def cancel_buy(self, touch):
+		self.video.play = True
 		anim = Animation(x=1920, t='out_elastic')
 		anim.start(self.buy_widget)
 
@@ -531,10 +534,10 @@ class MovieScreen(AppScreen):
 		self.ad_image.x = 1080
 		self.video.x = 1080
 
-		anim = Animation(x=0, t='out_quad', d=0.7)
+		anim = Animation(x=0, t='out_quad', d=1.5)
 		anim.start(self.bottom_layer)
  
-		anim2 = Animation(x=0, t='out_quad', d=0.7)
+		anim2 = Animation(x=0, t='out_quad', d=1.5)
 		anim2.start(self.ad_image)
 
 		self.movie_title.x=1080
@@ -588,7 +591,7 @@ class SockThread(threading.Thread):
 			except socket.error as msg:
 				print "SockThread Error: %s" % msg
 				time.sleep(3)
-				continue;
+				continue
 			print "...Socket Connected"
 			return True
 		return False
@@ -611,7 +614,10 @@ class SockThread(threading.Thread):
 	def _read(self, size):
 		data = ''
 		while len(data) < size:
-			data += self.socket.recv(size-len(data))
+			dataTmp = self.socket.recv(size-len(data))
+			data += dataTmp
+			if dataTmp == '':
+				raise RuntimeError("socket connection broken")
 		return data
 
 	def _msgLength(self):
@@ -651,11 +657,13 @@ class SockThread(threading.Thread):
 			except Exception as e:
 				print "%s" % e
 				break
-			if msg != '':
-				self.msgLock.acquire()
-				self.msg = msg
-				self.pending = True
-				self.msgLock.release()
+			else:
+				if msg != '':
+					self.msgLock.acquire()
+					self.msg = msg
+					self.pending = True
+					self.msgLock.release()
+		self.socket.close()
 
 class MovieKiosk(App):
 	'''MovieKioskApp is the application controler.
